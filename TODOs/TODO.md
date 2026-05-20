@@ -35,3 +35,27 @@
 - ✅ Full end-to-end scenarios tested
 - ✅ Bug fixed: transaction state application in mining
 
+---
+
+### TODO-0002: Параллельные ветвления транзакций с консенсусом
+
+**Status:** 📋 DESCRIPTION PHASE  
+**Branch:** `feature/parallel-branching`  
+**Goal:** Реализовать параллельную обработку транзакций через git-ветки с Byzantine Fault Tolerant консенсусом для слияния  
+
+**Key Features:**
+- Каждый кошелёк создаёт независимую ветку для транзакций
+- Неограниченный параллельный процессинг (no blocking)
+- Автоматическая детекция конфликтов (UTXO, nonce, balance)
+- Tendermint-style консенсус (7 валидаторов, 2f+1 quorum)
+- Гарантия целостности и непротиворечивости через BFT
+
+**Components:** 
+- `src/branch_manager.py` — управление ветками
+- `src/validator_network.py` — сеть валидаторов
+- `src/consensus.py` — Tendermint консенсус
+- `src/conflict_detector.py` — детекция конфликтов
+- `src/gossip_protocol.py` — распространение сообщений
+
+**Implementation Plan:** 5 phases, 50+ tests, TDD approach
+
