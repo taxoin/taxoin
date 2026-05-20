@@ -474,3 +474,89 @@ class TestParallelBranching:
 
             # Should reject due to balance mismatch
             assert result.success is False
+
+
+# ─── MVP Flow Integration ──────────────────────────────────────────────
+
+try:
+    from src.genesis import GenesisRegistry
+except ImportError:
+    GenesisRegistry = None
+
+try:
+    from src.service_registry import ServiceRegistration, ServiceRegistry
+except ImportError:
+    ServiceRegistration = None
+    ServiceRegistry = None
+
+try:
+    from src.attested_tx import AttestedTransaction, BalanceHold
+except ImportError:
+    AttestedTransaction = None
+    BalanceHold = None
+
+
+@pytest.mark.skipif(any(x is None for x in [GenesisRegistry, ServiceRegistration, ServiceRegistry, AttestedTransaction, BalanceHold]),
+                    reason="MVP modules not implemented")
+class TestMVPFlow:
+    """Full MVP flow: genesis → service → attested transaction."""
+
+    def test_full_mvp_flow(self):
+        """Complete MVP scenario with 3 participants."""
+        balances = {}
+
+        # Step 1: Genesis
+        validators = ["0xval1", "0xval2", "0xval3"]
+        alice, bob = "0xalice", "0xbob"
+        reg = GenesisRegistry(validators)
+
+        for v in validators:
+            reg.add_attestation(alice, v)
+        assert reg.is_genesis_done(alice)
+        assert reg.get_total_genesis_supply() == 50.0
+        balances[alice] = 50.0
+
+        for v in validators:
+            reg.add_attestation(bob, v)
+        assert reg.is_genesis_done(bob)
+        assert reg.get_total_genesis_supply() == 100.0
+        balances[bob] = 50.0
+
+        # Step 2: Service Registration
+        svc_reg = ServiceRegistry()
+        svc = ServiceRegistration(provider=alice, service_type="sms", price_per_unit=1.0,
+                                   description="SMS", endpoint="https://alice.sms")
+        assert svc_reg.register(svc)
+        assert len(svc_reg.list_services(service_type="sms")) == 1
+
+        # Step 3: Attested Transaction
+        hold = BalanceHold(balances)
+        tx = AttestedTransaction(consumer=bob, provider=alice, service_ref="sms:alice",
+                                  amount=1.0, consumer_sig="bob_sig", provider_sig="alice_sig")
+        assert tx.is_valid()
+
+        # Step 4: Hold + Claim
+        hold.create_hold(bob, tx.amount, tx.tx_id)
+        assert balances[bob] == 49.0
+        hold.claim_hold(tx.tx_id, alice, balances)
+
+        # Step 5: Verify
+        assert balances[alice] == 51.0
+        assert balances[bob] == 49.0
+
+    def test_mvp_insufficient_balance(self):
+        """Hold rejected when balance insufficient."""
+        balances = {"0xalice": 50.0, "0xbob": 50.0}
+        hold = BalanceHold(balances)
+        assert hold.create_hold("0xbob", 999.0, "tx01") is False
+        assert balances["0xbob"] == 50.0
+
+    def test_mvp_timeout_release(self):
+        """Timeout releases hold back to consumer."""
+        balances = {"0xalice": 50.0, "0xbob": 50.0}
+        hold = BalanceHold(balances)
+        hold.create_hold("0xbob", 10.0, "tx01")
+        assert balances["0xbob"] == 40.0
+        hold.release_hold("tx01")
+        assert balances["0xbob"] == 50.0
+        assert hold.get_held("0xbob") == 0.0
