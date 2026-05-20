@@ -18,7 +18,7 @@ class TestGitBlockchain:
     def test_init_creates_git_repo(self, temp_repo):
         chain = GitBlockchain(temp_repo)
         assert os.path.exists(os.path.join(temp_repo, ".git"))
-        assert os.path.exists(os.path.join(temp_repo, ".gitchain"))
+        assert os.path.exists(os.path.join(temp_repo, ".taxoin"))
 
     def test_init_creates_genesis_block(self, temp_repo):
         chain = GitBlockchain(temp_repo)

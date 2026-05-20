@@ -1,4 +1,4 @@
-# PRINCIPLES — Gitchain Development Manifesto
+# PRINCIPLES — Taxoin Development Manifesto
 
 > SIGNED NOT_FOR_COMPACTION. Sacred development principles for all agents.
 
@@ -440,8 +440,8 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-gitchain init
-gitchain branch create 0xalice
+taxoin init
+taxoin branch create 0xalice
 ```
 
 ## Architecture
@@ -652,7 +652,7 @@ def submit_transaction(self, tx: AsyncTransaction) -> bool:
 
 ## SIGNED NOT_FOR_COMPACTION.
 
-These principles are the foundation of Gitchain. Read them like a scripture before every development session.
+These principles are the foundation of Taxoin. Read them like a scripture before every development session.
 
 **For agents:** This file is your Bible. Follow it strictly. Pass knowledge to subsequent agents through DONE.md.
 

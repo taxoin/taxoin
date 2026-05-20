@@ -1,5 +1,5 @@
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║                          GITCHAIN ARCHITECTURE                                ║
+║                          TAXOIN ARCHITECTURE                                ║
 ║                     Blockchain on Git — Bitcoin + Ethereum                    ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
@@ -44,7 +44,7 @@
 │                 │ │ • remove_       │ │   difficulty│ │ • get_block()   │
 │ • AsyncTx       │ │   confirmed()   │ │             │ │                 │
 │   - sender      │ │                 │ │ Algorithm:  │ │ Storage:        │
-│   - recipient   │ │ Max size: 1000  │ │ SHA256 with │ │ .gitchain/      │
+│   - recipient   │ │ Max size: 1000  │ │ SHA256 with │ │ .taxoin/        │
 │   - value       │ │ Async queue     │ │ leading     │ │   └─ .git/      │
 │   - nonce       │ │ Duplicate check │ │ zeros       │ │      └─ objects/│
 │   - gas_price   │ │                 │ │             │ │      └─ refs/   │
@@ -88,7 +88,7 @@
 
     User                                                              Git Repo
      │                                                                    │
-     │  1. gitchain send <from> <to> <value>                             │
+     │  1. taxoin send <from> <to> <value>                             │
      ├──────────────────────────────────────────────────────────────────▶│
      │                                                                    │
      │  2. Create AsyncTransaction                                       │
@@ -111,7 +111,7 @@
      │     └────────────────────────────────┘                            │
      │                    │                                               │
      │                    ▼                                               │
-     │  4. gitchain mine <miner_address>                                 │
+     │  4. taxoin mine <miner_address>                                 │
      ├──────────────────────────────────────────────────────────────────▶│
      │                                                                    │
      │  5. Create Block Template                                         │
@@ -185,7 +185,7 @@
 
 Example Git Structure:
 
-.gitchain/
+.taxoin/
 └── .git/
     ├── objects/
     │   ├── 00/

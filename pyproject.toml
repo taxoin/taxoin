@@ -1,5 +1,5 @@
 [project]
-name = "gitchain"
+name = "taxoin"
 version = "0.1.0"
 description = "Blockchain on git — Bitcoin + Ethereum concepts with async transactions"
 requires-python = ">=3.10"

@@ -28,7 +28,7 @@ from typing import Optional
 from .core import Block, BlockHeader, make_genesis_block
 
 
-GIT_DIR = ".gitchain"
+GIT_DIR = ".taxoin"
 BLOCK_FILE = "block.json"
 GENESIS_TAG = "genesis"
 
@@ -70,12 +70,12 @@ class GitBlockchain:
     # ── Repo management ──────────────────────────────────────────────
 
     def _init_repo(self) -> None:
-        """Ensure the git repo and .gitchain dir exist."""
+        """Ensure the git repo and .taxoin dir exist."""
         os.makedirs(self.chain_dir, exist_ok=True)
         if not os.path.exists(os.path.join(self.repo_path, ".git")):
             _git("init", cwd=self.repo_path)
-            _git("config", "user.name", "gitchain", cwd=self.repo_path)
-            _git("config", "user.email", "gitchain@localhost", cwd=self.repo_path)
+            _git("config", "user.name", "taxoin", cwd=self.repo_path)
+            _git("config", "user.email", "taxoin@localhost", cwd=self.repo_path)
             # Generate initial genesis block
             genesis = make_genesis_block()
             self._store_block(genesis, parent_commit=None)
@@ -90,14 +90,14 @@ class GitBlockchain:
     # ── Block storage ────────────────────────────────────────────────
 
     def _write_block_file(self, block: Block) -> str:
-        """Write block.json inside .gitchain/ and return the full path."""
+        """Write block.json inside .taxoin/ and return the full path."""
         block_path = os.path.join(self.chain_dir, BLOCK_FILE)
         with open(block_path, "w") as f:
             f.write(block.serialize())
         return block_path
 
     def _read_block_file(self) -> Optional[Block]:
-        """Read block.json from .gitchain/ and return a Block."""
+        """Read block.json from .taxoin/ and return a Block."""
         block_path = os.path.join(self.chain_dir, BLOCK_FILE)
         if not os.path.exists(block_path):
             return None
@@ -160,7 +160,7 @@ class GitBlockchain:
         return self._store_block(block, parent)
 
     def get_latest_block(self) -> Optional[Block]:
-        """Read the latest block from .gitchain/block.json."""
+        """Read the latest block from .taxoin/block.json."""
         block = self._read_block_file()
         return block
 

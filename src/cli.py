@@ -1,17 +1,16 @@
-"""
-CLI for Gitchain — Blockchain on Git.
+"""CLI for Taxoin — Blockchain on Git.
 
 Usage:
-  gitchain init                 Initialize the chain
-  gitchain status               Show chain status
-  gitchain balance <address>    Show balance for an address
-  gitchain accounts             List all accounts
-  gitchain send <from> <to> <value>  Submit an async transaction
-  gitchain mine <address>       Mine a new block (coinbase to address)
-  gitchain chain                Show the full chain
-  gitchain verify               Verify chain integrity
-  gitchain wallet new           Generate a new wallet keypair
-  gitchain wallet address       Show wallet address
+  taxoin init                 Initialize the chain
+  taxoin status               Show chain status
+  taxoin balance <address>    Show balance for an address
+  taxoin accounts             List all accounts
+  taxoin send <from> <to> <value>  Submit an async transaction
+  taxoin mine <address>       Mine a new block (coinbase to address)
+  taxoin chain                Show the full chain
+  taxoin verify               Verify chain integrity
+  taxoin wallet new           Generate a new wallet keypair
+  taxoin wallet address       Show wallet address
 """
 from __future__ import annotations
 
@@ -29,7 +28,7 @@ from .crypto_utils import (
     private_to_bytes, public_to_bytes,
 )
 
-WALLET_DIR = ".gitchain"
+WALLET_DIR = ".taxoin"
 WALLET_FILE = "wallet.json"
 
 
@@ -58,7 +57,7 @@ def _save_wallet(wallet: dict) -> None:
 
 @click.group()
 def cli():
-    """Gitchain — Blockchain on Git."""
+    """Taxoin — Blockchain on Git."""
     pass
 
 
@@ -67,7 +66,7 @@ def init():
     """Initialize a new blockchain."""
     engine = _get_engine()
     height = engine.git.get_chain_height()
-    click.echo(f"✓ Chain initialized at .gitchain/")
+    click.echo(f"✓ Chain initialized at .taxoin/")
     click.echo(f"  Genesis block at height {height}")
     click.echo(f"  Difficulty: {engine.difficulty}")
 
@@ -229,7 +228,7 @@ def address():
     if wallet_data:
         click.echo(f"Address: {wallet_data['address']}")
     else:
-        click.echo("No wallet found. Create one with: gitchain wallet new")
+        click.echo("No wallet found. Create one with: taxoin wallet new")
 
 
 if __name__ == "__main__":
