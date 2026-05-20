@@ -39,7 +39,7 @@
 
 ### TODO-0002: Параллельные ветвления транзакций с консенсусом
 
-**Status:** 📋 DESCRIPTION PHASE  
+**Status:** ✅ COMPLETED  
 **Branch:** `feature/parallel-branching`  
 **Goal:** Реализовать параллельную обработку транзакций через git-ветки с Byzantine Fault Tolerant консенсусом для слияния  
 
@@ -61,26 +61,26 @@
 
 ---
 
-### TODO-0003: Monetary Policy, Timelocks & Tiny Script
+### TODO-0003: Proof of Contribution — Service Economy
 
 **Status:** 📋 DESCRIPTION PHASE  
-**Branch:** `brainstorm/taxoin-architecture`  
-**Goal:** Реализовать прозрачную монетарную политику (Bitcoin-style 21M cap), UTXO timelocks, и Tiny Script VM для смарт-контрактов
+**Branch:** `feature/proof-of-contribution`  
+**Goal:** Заменить бесполезный PoW на Proof of Contribution — экономику полезных сервисов (SMS, GPU, API, такси), где каждый Taxoin заработан реальным вкладом
 
 **Key Features:**
-- Прозрачная эмиссия: халвинг каждые 210K блоков, кап 21M Taxoin
-- Отказ от PoW — блоки подписываются валидаторами
-- UTXO timelocks — временна́я блокировка средств (блокировка до высоты N)
-- Tiny Script — 15-20 стековых опкодов, без циклов, детерминизм
-- Contract storage — изолированное KV-хранилище для контрактов
-- Исполнение контрактов валидаторами при consensus (5/7 голосов)
+- PoW → Proof of Contribution: майнинг CPU заменён на предоставление сервисов
+- Genesis: 1M Ⓣ для 7 основателей, дальнейшая эмиссия только через сервисы
+- Service Registry: git-based реестр всех сервисов с ценами и рейтингом
+- Mutual Attestation: обоюдная подпись (provider + consumer) для каждой транзакции
+- Balance Hold: резервирование Ⓣ на время выполнения заказа
+- Reputation: рейтинговая система для защиты от спама и мошенников
 
 **Components:**
-- `src/monetary_policy.py` — MonetaryPolicy (supply, halving, cap)
-- `src/tiny_script.py` — TinyVM (execute, opcodes, storage)
-- `src/tiny_opcodes.py` — Opcode enum + definitions
-- `src/core.py` — UTXO.timelock, Opcode types
-- `src/branch_state.py` — contract_storage, locked_balance
+- `src/service_registry.py` — реестр сервисов + регистрация
+- `src/attested_tx.py` — обоюдноподписанные транзакции
+- `src/reputation.py` — рейтинг и репутация
+- `src/balance_hold.py` — резервирование баланса
+- `src/genesis.py` — начальное распределение 1M Ⓣ
 
-**Implementation Plan:** 6 phases, 60-80 tests, TDD approach
+**Implementation Plan:** 5 phases, 60-80 tests, TDD approach
 
