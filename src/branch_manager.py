@@ -10,6 +10,7 @@ from typing import Optional
 
 from .branch_state import BranchState
 from .conflict_detector import ConflictDetector, MergeResult, ResolutionStrategy
+from .consensus import MergeConsensus
 from .validator_network import ValidatorNode, ValidatorSet, ValidatorNetwork
 from .core import Account, AsyncTransaction, Block, BlockHeader, Transaction, TxOutput
 from .git_backend import GitBlockchain
@@ -445,3 +446,56 @@ class BranchManager:
         if not self._validator_network:
             return []
         return self._validator_network.validator_set.get_active_validators()
+
+    def run_consensus(self, branch_name: str) -> MergeResult:
+        """Run a full consensus round to merge a branch.
+
+        Requires the validator network to be initialized first
+        via init_validator_network().
+
+        Args:
+            branch_name: Name of the branch to merge
+
+        Returns:
+            MergeResult indicating success/failure
+        """
+        if not self._validator_network:
+            return MergeResult(
+                success=False,
+                message="Validator network not initialized. Call init_validator_network() first.",
+            )
+
+        # Get branch state
+        branch_state = self.branches.get(branch_name)
+        if not branch_state:
+            return MergeResult(
+                success=False,
+                message=f"Branch '{branch_name}' does not exist",
+            )
+
+        # Get proposer (first active validator)
+        validators = self._validator_network.validator_set.get_active_validators()
+        if not validators:
+            return MergeResult(
+                success=False,
+                message="No active validators",
+            )
+
+        proposer = validators[0].address
+
+        # Run consensus
+        consensus = MergeConsensus(self._validator_network)
+        main_state = self.get_main_state()
+
+        round = consensus.run_consensus(
+            branch_state=branch_state,
+            branch_name=branch_name,
+            proposer=proposer,
+            branch_manager=self,
+            main_state=main_state,
+        )
+
+        return round.result or MergeResult(
+            success=False,
+            message=f"Consensus failed: {round.status.value}",
+        )
