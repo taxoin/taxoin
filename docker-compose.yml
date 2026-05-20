@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  validator-1:
+    build: .
+    command: ["--port", "47701"]
+    volumes:
+      - taxoin-data-1:/app/.taxoin
+    environment:
+      - TAXOIN_VALIDATOR=1
+      - TAXOIN_PORT=47701
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:47701/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  validator-2:
+    build: .
+    command: ["--port", "47702"]
+    volumes:
+      - taxoin-data-2:/app/.taxoin
+    environment:
+      - TAXOIN_VALIDATOR=2
+      - TAXOIN_PORT=47702
+    depends_on:
+      validator-1:
+        condition: service_healthy
+
+  validator-3:
+    build: .
+    command: ["--port", "47703"]
+    volumes:
+      - taxoin-data-3:/app/.taxoin
+    environment:
+      - TAXOIN_VALIDATOR=3
+      - TAXOIN_PORT=47703
+    depends_on:
+      validator-1:
+        condition: service_healthy
+
+  api:
+    build: .
+    command: ["--port", "47780"]
+    ports:
+      - "47780:47780"
+    volumes:
+      - taxoin-data-api:/app/.taxoin
+    environment:
+      - TAXOIN_API=1
+      - TAXOIN_PORT=8080
+    depends_on:
+      - validator-1
+      - validator-2
+      - validator-3
+
+volumes:
+  taxoin-data-1:
+  taxoin-data-2:
+  taxoin-data-3:
+  taxoin-data-api:
