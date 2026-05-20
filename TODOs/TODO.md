@@ -99,3 +99,17 @@ Storage:  Git backend + JSON persistence
 Consensus: Tendermint 5/7 (BFT f=2)
 Economy:  Proof of Contribution + Mutual Attestation
 Tags:     mvp-v1, mvp-v2, mvp-v3, architecture-v1, research-v1
+
+### 🎯 TODO-0005: Validator Tools
+
+**Status:** 📋 DESCRIPTION PHASE  
+**Goal:** Telegram bot + Web dashboard для валидаторов
+
+| ID | Тема | Приоритет | Статус |
+|----|------|-----------|--------|
+| **0005A** | Telegram Bot — /status, /disputes, /vote, /genesis, push-уведомления | 🔴 **P0** | 📝 Spec |
+| **0005B** | Web Dashboard — лампочка, графики, disputes, genesis queue | 🟡 **P1** | 📝 Spec |
+
+**Детали:**
+- 0005A → `TODOs/TODO-0005/TODO-0005A_TELEGRAM_BOT.md`
+- 0005B → `TODOs/TODO-0005/TODO-0005B_WEB_DASHBOARD.md`
