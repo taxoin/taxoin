@@ -395,3 +395,40 @@ class TestBranchMerge:
         assert result.success is True
 
         assert source not in branch_manager.branches
+
+
+
+@pytest.mark.skipif(BranchManager is None, reason="BranchManager not implemented")
+class TestMiningWithoutPoW:
+    """Tests for block creation without Proof of Work."""
+
+    def test_mine_block_without_pow_succeeds(self, branch_manager):
+        """Block can be mined without PoW when skip_pow=True."""
+        branch_name = branch_manager.create_branch("0xalice")
+        branch_state = branch_manager.get_branch_state(branch_name)
+        branch_state.accounts["0xminer"] = Account(address="0xminer", balance=0.0, nonce=0)
+
+        block = branch_manager.mine_block_on_branch(branch_name, "0xminer", skip_pow=True)
+
+        assert block is not None
+        assert len(block.transactions) >= 1
+
+    def test_mine_block_without_pow_updates_state(self, branch_manager):
+        """State updates work without PoW."""
+        branch_name = branch_manager.create_branch("0xalice")
+        branch_state = branch_manager.get_branch_state(branch_name)
+        branch_state.accounts["0xminer"] = Account(address="0xminer", balance=0.0, nonce=0)
+
+        initial_height = branch_manager.git.get_chain_height()
+        block = branch_manager.mine_block_on_branch(branch_name, "0xminer", skip_pow=True)
+
+        assert block is not None
+        assert branch_manager.git.get_chain_height() == initial_height + 1
+        assert branch_state.accounts["0xminer"].balance > 0.0
+
+    def test_mine_block_without_pow_on_nonexistent_branch(self, branch_manager):
+        """skip_pow still returns None for nonexistent branch."""
+        block = branch_manager.mine_block_on_branch(
+            "nonexistent-branch", "0xminer", skip_pow=True
+        )
+        assert block is None

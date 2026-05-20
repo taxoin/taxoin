@@ -166,13 +166,15 @@ class BranchManager:
     def mine_block_on_branch(
         self,
         branch_name: str,
-        coinbase_address: str
+        coinbase_address: str,
+        skip_pow: bool = False,
     ) -> Optional[Block]:
         """Mine a new block on a specific branch.
 
         Args:
             branch_name: Name of the branch
             coinbase_address: Address to receive mining reward
+            skip_pow: If True, skip Proof of Work
 
         Returns:
             Mined block, or None if mining failed
@@ -245,11 +247,12 @@ class BranchManager:
             state_snapshot=state_snapshot,
         )
 
-        # Mine block
-        try:
-            mine_block(header)
-        except RuntimeError:
-            return None
+        # Mine block (skip PoW if requested)
+        if not skip_pow:
+            try:
+                mine_block(header)
+            except RuntimeError:
+                return None
 
         # Commit to git
         self.git.add_block(block)
