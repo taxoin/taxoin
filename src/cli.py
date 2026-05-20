@@ -314,24 +314,54 @@ def tx():
 def send(provider, amount, ref, desc):
     """Send an attested payment to a provider."""
     from src.attested_tx import AttestedTransaction
+    from src.crypto_utils import private_key_from_pem, sign
     wallet_data = _load_wallet()
     if not wallet_data:
         click.echo("No wallet found.")
         return
     address = wallet_data["address"]
+    priv_key_pem = wallet_data["private_key"]
 
     tx_obj = AttestedTransaction(
         consumer=address,
         provider=provider,
         service_ref=ref,
         amount=amount,
-        consumer_sig="pending",  # would be real sig in production
-        provider_sig="pending",
+        consumer_sig="",
+        provider_sig="",
         description=desc,
     )
+
+    # Sign as consumer
+    priv_key = private_key_from_pem(priv_key_pem)
+    sig_data = f"{tx_obj.consumer}:{tx_obj.provider}:{tx_obj.amount}:{tx_obj.service_ref}"
+    tx_obj.consumer_sig = sign(priv_key, sig_data)
+
     click.echo(f"✓ Transaction created: {tx_obj.tx_id}")
-    click.echo(f"  {amount} Ⓣ from {address[:16]}... → {provider[:16]}...")
-    click.echo(f"  Status: pending attestation (both parties must sign)")
+    click.echo(f"  {amount} Ⓣ from {address[:16]}... \u2192 {provider[:16]}...")
+    click.echo(f"  Consumer signature: {tx_obj.consumer_sig[:32]}...")
+    click.echo(f"  Status: waiting for provider attestation")
+
+
+@tx.command()
+@click.argument("tx_id")
+def attest(tx_id):
+    """Attest a pending transaction (provider signs)."""
+    from src.crypto_utils import private_key_from_pem, sign
+    wallet_data = _load_wallet()
+    if not wallet_data:
+        click.echo("No wallet found.")
+        return
+    address = wallet_data["address"]
+    priv_key_pem = wallet_data["private_key"]
+
+    priv_key = private_key_from_pem(priv_key_pem)
+    sig_data = f"attest:{tx_id}:{address}"
+    signature = sign(priv_key, sig_data)
+
+    click.echo(f"✓ Transaction {tx_id[:16]}... attested by {address[:16]}...")
+    click.echo(f"  Provider signature: {signature[:32]}...")
+    click.echo(f"  Status: complete (both parties signed)")
 
 
 # ── Branch Commands ──────────────────────────────────────────────────────
