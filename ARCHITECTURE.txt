@@ -1,0 +1,261 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                          GITCHAIN ARCHITECTURE                                ║
+║                     Blockchain on Git — Bitcoin + Ethereum                    ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                              CLI LAYER (cli.py)                               │
+│  ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┬──────────┐   │
+│  │  init   │ status  │ balance │ accounts│  send   │  mine   │  verify  │   │
+│  └────┬────┴────┬────┴────┬────┴────┬────┴────┬────┴────┬────┴────┬─────┘   │
+│       │         │         │         │         │         │         │          │
+└───────┼─────────┼─────────┼─────────┼─────────┼─────────┼─────────┼──────────┘
+        │         │         │         │         │         │         │
+        └─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘
+                                      │
+                                      ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                      BLOCKCHAIN ENGINE (blockchain.py)                        │
+│                           Main Orchestrator                                   │
+│                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  State Management                                                       │ │
+│  │  • accounts: dict[str, Account]     (Ethereum-style)                   │ │
+│  │  • utxo_set: dict[tuple, UTXO]      (Bitcoin-style)                    │ │
+│  │  • difficulty: int                   (PoW difficulty)                   │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Account    │  │   Mempool    │  │     Miner    │  │ Git Backend  │    │
+│  │  Management  │  │   (async)    │  │    (PoW)     │  │   (storage)  │    │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
+│         │                 │                 │                 │             │
+└─────────┼─────────────────┼─────────────────┼─────────────────┼─────────────┘
+          │                 │                 │                 │
+          ▼                 ▼                 ▼                 ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐ ┌─────────────────┐
+│  ACCOUNT MODEL  │ │   MEMPOOL       │ │   MINER     │ │  GIT BACKEND    │
+│  (core.py)      │ │  (mempool.py)   │ │ (miner.py)  │ │(git_backend.py) │
+├─────────────────┤ ├─────────────────┤ ├─────────────┤ ├─────────────────┤
+│ • Account       │ │ • Queue         │ │ • mine()    │ │ • init_repo()   │
+│   - address     │ │ • validate_tx() │ │ • validate_ │ │ • add_block()   │
+│   - balance     │ │ • submit()      │ │   pow()     │ │ • get_chain()   │
+│   - nonce       │ │ • get_pending() │ │ • adjust_   │ │ • verify()      │
+│                 │ │ • remove_       │ │   difficulty│ │ • get_block()   │
+│ • AsyncTx       │ │   confirmed()   │ │             │ │                 │
+│   - sender      │ │                 │ │ Algorithm:  │ │ Storage:        │
+│   - recipient   │ │ Max size: 1000  │ │ SHA256 with │ │ .gitchain/      │
+│   - value       │ │ Async queue     │ │ leading     │ │   └─ .git/      │
+│   - nonce       │ │ Duplicate check │ │ zeros       │ │      └─ objects/│
+│   - gas_price   │ │                 │ │             │ │      └─ refs/   │
+│   - gas_limit   │ │                 │ │ Difficulty: │ │                 │
+│   - signature   │ │                 │ │ 4-6 zeros   │ │ Each commit =   │
+└─────────────────┘ └─────────────────┘ └─────────────┘ │ one block       │
+                                                         └─────────────────┘
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────────────────────┐
+│   UTXO MODEL    │ │  CRYPTO UTILS   │ │      CORE DATA STRUCTURES       │
+│   (core.py)     │ │(crypto_utils.py)│ │         (core.py)               │
+├─────────────────┤ ├─────────────────┤ ├─────────────────────────────────┤
+│ • Transaction   │ │ • generate_     │ │ • Block                         │
+│   - inputs[]    │ │   keypair()     │ │   - header (BlockHeader)        │
+│   - outputs[]   │ │ • sign()        │ │   - transactions[]              │
+│   - tx_id       │ │ • verify()      │ │   - state_snapshot              │
+│                 │ │ • public_key_   │ │   - hash                        │
+│ • TxInput       │ │   to_address()  │ │                                 │
+│   - tx_id       │ │                 │ │ • BlockHeader                   │
+│   - output_idx  │ │ Curve:          │ │   - parent_hash                 │
+│   - signature   │ │ SECP256K1       │ │   - merkle_root                 │
+│                 │ │ (Bitcoin/ETH)   │ │   - timestamp                   │
+│ • TxOutput      │ │                 │ │   - difficulty                  │
+│   - address     │ │ Address format: │ │   - nonce                       │
+│   - amount      │ │ 0x + SHA256     │ │                                 │
+│                 │ │ (last 40 hex)   │ │ Genesis block: parent = 0x00... │
+│ • UTXO          │ │                 │ │                                 │
+│   - tx_id       │ │                 │ │ Hash: double SHA256             │
+│   - output_idx  │ │                 │ │ Merkle: SHA256 of all tx hashes │
+│   - address     │ │                 │ │                                 │
+│   - amount      │ │                 │ │                                 │
+└─────────────────┘ └─────────────────┘ └─────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              DATA FLOW DIAGRAM
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         TRANSACTION LIFECYCLE                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    User                                                              Git Repo
+     │                                                                    │
+     │  1. gitchain send <from> <to> <value>                             │
+     ├──────────────────────────────────────────────────────────────────▶│
+     │                                                                    │
+     │  2. Create AsyncTransaction                                       │
+     │     ┌────────────────────────────────┐                            │
+     │     │ sender: 0xalice                │                            │
+     │     │ recipient: 0xbob               │                            │
+     │     │ value: 100                     │                            │
+     │     │ nonce: 0                       │                            │
+     │     │ gas_price: 0.001               │                            │
+     │     │ gas_limit: 21000               │                            │
+     │     └────────────────────────────────┘                            │
+     │                    │                                               │
+     │                    ▼                                               │
+     │  3. Submit to Mempool (async)                                     │
+     │     ┌────────────────────────────────┐                            │
+     │     │ • Validate sender exists       │                            │
+     │     │ • Check balance >= value+gas   │                            │
+     │     │ • Check nonce >= current       │                            │
+     │     │ • Add to async queue           │                            │
+     │     └────────────────────────────────┘                            │
+     │                    │                                               │
+     │                    ▼                                               │
+     │  4. gitchain mine <miner_address>                                 │
+     ├──────────────────────────────────────────────────────────────────▶│
+     │                                                                    │
+     │  5. Create Block Template                                         │
+     │     ┌────────────────────────────────┐                            │
+     │     │ • Get pending txs from mempool │                            │
+     │     │ • Create coinbase tx (reward)  │                            │
+     │     │ • Apply txs to state snapshot  │                            │
+     │     │ • Calculate merkle root        │                            │
+     │     └────────────────────────────────┘                            │
+     │                    │                                               │
+     │                    ▼                                               │
+     │  6. Mine Block (PoW)                                              │
+     │     ┌────────────────────────────────┐                            │
+     │     │ Find nonce where:              │                            │
+     │     │ SHA256(header) starts with     │                            │
+     │     │ N leading zeros                │                            │
+     │     │                                │                            │
+     │     │ Difficulty: 4 zeros            │                            │
+     │     │ Example: 0000a3f2b1c...        │                            │
+     │     └────────────────────────────────┘                            │
+     │                    │                                               │
+     │                    ▼                                               │
+     │  7. Commit to Git                                                 │
+     │     ┌────────────────────────────────┐                            │
+     │     │ git commit -m "Block #N"       │◀───────────────────────────┤
+     │     │ • Commit SHA = Block hash      │                            │
+     │     │ • Parent commit = prev block   │                            │
+     │     │ • Tree = block data (JSON)     │                            │
+     │     │ • Tag = chain head             │                            │
+     │     └────────────────────────────────┘                            │
+     │                    │                                               │
+     │                    ▼                                               │
+     │  8. Update State                                                  │
+     │     ┌────────────────────────────────┐                            │
+     │     │ • Apply state_snapshot         │                            │
+     │     │ • Update account balances      │                            │
+     │     │ • Update nonces                │                            │
+     │     │ • Update UTXO set              │                            │
+     │     │ • Remove txs from mempool      │                            │
+     │     └────────────────────────────────┘                            │
+     │                    │                                               │
+     │                    ▼                                               │
+     │  9. Return Block                                                  │
+     │◀───────────────────────────────────────────────────────────────────┤
+     │                                                                    │
+     │  ✓ Transaction confirmed                                          │
+     │  ✓ Balances updated                                               │
+     │  ✓ Chain extended                                                 │
+     │                                                                    │
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                           GIT AS BLOCKCHAIN MAPPING
+═══════════════════════════════════════════════════════════════════════════════
+
+┌──────────────────────┬────────────────────────────────────────────────────┐
+│   Blockchain         │   Git                                              │
+├──────────────────────┼────────────────────────────────────────────────────┤
+│ Block                │ Commit                                             │
+│ Block hash           │ Commit SHA-1                                       │
+│ Parent hash          │ Parent commit SHA                                  │
+│ Merkle root          │ Tree SHA (contains block data)                     │
+│ Timestamp            │ Commit timestamp                                   │
+│ Block data           │ Tree object (JSON file)                            │
+│ Chain                │ Branch / Tag history                               │
+│ Genesis block        │ Root commit (no parent)                            │
+│ Chain head           │ refs/tags/chain-head                               │
+│ Mining               │ Finding commit with N leading zeros                │
+│ Verification         │ git log --verify (check parent links)              │
+└──────────────────────┴────────────────────────────────────────────────────┘
+
+Example Git Structure:
+
+.gitchain/
+└── .git/
+    ├── objects/
+    │   ├── 00/
+    │   │   └── 00a3f2b1c... (Block #1 - genesis)
+    │   ├── 00/
+    │   │   └── 00b4e3c2d... (Block #2)
+    │   └── 00/
+    │       └── 00c5f4d3e... (Block #3)
+    ├── refs/
+    │   └── tags/
+    │       └── chain-head -> 0000c5f4d3e...
+    └── HEAD -> refs/tags/chain-head
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              TEST ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            TEST PYRAMID                                     │
+│                                                                             │
+│                              ┌─────────┐                                    │
+│                              │  E2E    │  9 tests                           │
+│                              │  Tests  │  (test_integration.py)             │
+│                              └─────────┘                                    │
+│                          ┌─────────────────┐                                │
+│                          │  Integration    │  9 tests                       │
+│                          │     Tests       │  (test_blockchain.py)          │
+│                          └─────────────────┘                                │
+│                  ┌───────────────────────────────┐                          │
+│                  │       Unit Tests              │  49 tests                │
+│                  │  • test_core.py        (17)   │                          │
+│                  │  • test_crypto.py      (7)    │                          │
+│                  │  • test_git_backend.py (7)    │                          │
+│                  │  • test_mempool.py     (8)    │                          │
+│                  │  • test_miner.py       (8)    │                          │
+│                  └───────────────────────────────┘                          │
+│                                                                             │
+│  Total: 67 tests, 100% passing, 6.78s runtime                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                           HYBRID DESIGN PHILOSOPHY
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────┬─────────────────────────────────────────┐
+│      Bitcoin Concepts           │      Ethereum Concepts                  │
+├─────────────────────────────────┼─────────────────────────────────────────┤
+│ • UTXO Model                    │ • Account Model                         │
+│   - Unspent outputs             │   - Balance per address                 │
+│   - Transaction inputs/outputs  │   - Nonce for replay protection         │
+│                                 │                                         │
+│ • Proof of Work                 │ • Gas System                            │
+│   - SHA256 mining               │   - gas_price × gas_limit               │
+│   - Difficulty adjustment       │   - Fees go to miner                    │
+│                                 │                                         │
+│ • ECDSA secp256k1               │ • Async Transactions                    │
+│   - Same curve as Bitcoin       │   - Mempool queue                       │
+│   - Address derivation          │   - Concurrent submission               │
+│                                 │                                         │
+│ • Coinbase Reward               │ • State Snapshot                        │
+│   - 50 coins per block          │   - Account balances in block           │
+│   - Goes to miner               │   - State transitions                   │
+└─────────────────────────────────┴─────────────────────────────────────────┘
+
+                    ┌──────────────────────────┐
+                    │   Git as Foundation      │
+                    │  • Immutable history     │
+                    │  • Merkle DAG            │
+                    │  • Content addressing    │
+                    │  • Distributed by design │
+                    └──────────────────────────┘
