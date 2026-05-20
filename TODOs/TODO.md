@@ -109,6 +109,7 @@ Tags:     mvp-v1, mvp-v2, mvp-v3, architecture-v1, research-v1
 |----|------|-----------|--------|
 | **0005A** | Telegram Bot — /status, /disputes, /vote, /genesis, push-уведомления | 🔴 **P0** | 📝 Spec |
 | **0005B** | Web Dashboard — лампочка, графики, disputes, genesis queue | 🟡 **P1** | 📝 Spec |
+| **0005C** | **PWA** — installable mobile app, push, offline, QR scan | 🔴 **P0** | 📝 Spec |
 
 **Детали:**
 - 0005A → `TODOs/TODO-0005/TODO-0005A_TELEGRAM_BOT.md`
