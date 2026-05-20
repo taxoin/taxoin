@@ -232,6 +232,108 @@ def address():
         click.echo("No wallet found. Create one with: taxoin wallet new")
 
 
+# ── Genesis Commands ─────────────────────────────────────────────────────
+
+@cli.group()
+def genesis():
+    """Genesis (Proof of Personhood)."""
+    pass
+
+
+@genesis.command()
+@click.argument("address")
+def attest(address: str):
+    """Attest a human for genesis (validator only)."""
+    click.echo(f"Genesis attestation for {address} would be recorded.")
+    click.echo("Note: requires validator key and 3-of-7 quorum.")
+
+
+# ── Service Commands ─────────────────────────────────────────────────────
+
+@cli.group()
+def service():
+    """Service registry management."""
+    pass
+
+
+@service.command()
+@click.option("--type", "svc_type", required=True, help="Service type (sms, gpu, taxi, ...)")
+@click.option("--price", required=True, type=float, help="Price in Ⓣ per unit")
+@click.option("--endpoint", required=True, help="Service endpoint URL")
+@click.option("--description", required=True, help="Service description")
+def register(svc_type, price, endpoint, description):
+    """Register a new service."""
+    from src.service_registry import ServiceRegistration, ServiceRegistry
+    wallet_data = _load_wallet()
+    if not wallet_data:
+        click.echo("No wallet found. Create one with: taxoin wallet new")
+        return
+    address = wallet_data["address"]
+
+    reg = ServiceRegistry()
+    service_def = ServiceRegistration(
+        provider=address,
+        service_type=svc_type,
+        price_per_unit=price,
+        description=description,
+        endpoint=endpoint,
+    )
+    ok = reg.register(service_def)
+    if ok:
+        click.echo(f"✓ Service registered: {svc_type} @ {price} Ⓣ/unit")
+    else:
+        click.echo("✗ Service already registered for this wallet")
+
+
+@service.command(name="list")
+def list_services():
+    """List all registered services."""
+    from src.service_registry import ServiceRegistry
+    reg = ServiceRegistry()
+    services = reg.list_services()
+    if not services:
+        click.echo("No services registered.")
+        return
+    for s in services:
+        click.echo(f"  {s.provider[:16]}... | {s.service_type:<8} | {s.price_per_unit} Ⓣ | {s.rating:.1f}★")
+
+
+# ── TX Commands ──────────────────────────────────────────────────────────
+
+@cli.group()
+def tx():
+    """Transaction commands (attested payments)."""
+    pass
+
+
+@tx.command()
+@click.argument("provider")
+@click.option("--amount", required=True, type=float, help="Amount in Ⓣ")
+@click.option("--ref", required=True, help="Service reference")
+@click.option("--desc", default="", help="Transaction description")
+def send(provider, amount, ref, desc):
+    """Send an attested payment to a provider."""
+    from src.attested_tx import AttestedTransaction
+    wallet_data = _load_wallet()
+    if not wallet_data:
+        click.echo("No wallet found.")
+        return
+    address = wallet_data["address"]
+
+    tx_obj = AttestedTransaction(
+        consumer=address,
+        provider=provider,
+        service_ref=ref,
+        amount=amount,
+        consumer_sig="pending",  # would be real sig in production
+        provider_sig="pending",
+        description=desc,
+    )
+    click.echo(f"✓ Transaction created: {tx_obj.tx_id}")
+    click.echo(f"  {amount} Ⓣ from {address[:16]}... → {provider[:16]}...")
+    click.echo(f"  Status: pending attestation (both parties must sign)")
+
+
 # ── Branch Commands ──────────────────────────────────────────────────────
 
 @cli.group()
