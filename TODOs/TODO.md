@@ -111,3 +111,6 @@
 - **0004F: Technical Wishlist** — mobile blockchain: constitution layer,
   governance, light client, zk, sharding, offline-first, formal verification
   → `TODOs/TODO-0004/TODO-0004F_TECH_WISHLIST.md`
+
+- **0004G: Path to Public** — Docker, REST API, web wallet, Telegram Mini App, QR payments
+  → `TODOs/TODO-0004/TODO-0004G_PATH_TO_PUBLIC.md`
