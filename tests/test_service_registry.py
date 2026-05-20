@@ -1,4 +1,7 @@
 """Tests for Service Registry module."""
+import json
+import os
+import tempfile
 import time
 import pytest
 
@@ -71,7 +74,7 @@ class TestServiceRegistry:
                                           description="SMS", endpoint="https://a.com"))
         ok = reg.register(ServiceRegistration(provider="0xalice", service_type="gpu", price_per_unit=5.0,
                                                description="GPU", endpoint="https://b.com"))
-        assert ok is False  # can't register twice
+        assert ok is False
 
     def test_service_types_defined(self):
         assert SERVICE_TYPES is not None
@@ -83,3 +86,40 @@ class TestServiceRegistry:
                                  description="SMS", endpoint="https://a.com")
         assert s.rating == 0.0
         assert s.total_tx == 0
+
+
+@pytest.mark.skipif(ServiceRegistry is None, reason="ServiceRegistry not implemented")
+class TestServiceRegistryPersistence:
+    """Tests for service registry persistence to disk."""
+
+    def test_save_and_load_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "services.json")
+            reg = ServiceRegistry(store_path=path)
+            reg2 = ServiceRegistry(store_path=path)
+            assert reg2.list_services() == []
+
+    def test_save_and_load_with_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "services.json")
+            reg = ServiceRegistry(store_path=path)
+            reg.register(ServiceRegistration(provider="0xalice", service_type="sms",
+                                              price_per_unit=0.1, description="SMS",
+                                              endpoint="https://a.com"))
+            reg.register(ServiceRegistration(provider="0xbob", service_type="gpu",
+                                              price_per_unit=5.0, description="GPU",
+                                              endpoint="https://b.com"))
+            reg2 = ServiceRegistry(store_path=path)
+            assert len(reg2.list_services()) == 2
+
+    def test_preserves_data_across_instances(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "services.json")
+            reg = ServiceRegistry(store_path=path)
+            reg.register(ServiceRegistration(provider="0xalice", service_type="sms",
+                                              price_per_unit=0.1, description="SMS",
+                                              endpoint="https://a.com"))
+            reg2 = ServiceRegistry(store_path=path)
+            loaded = reg2.get_service("0xalice")
+            assert loaded is not None
+            assert loaded.price_per_unit == 0.1

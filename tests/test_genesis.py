@@ -1,4 +1,7 @@
 """Tests for Genesis module (Proof of Personhood)."""
+import json
+import os
+import tempfile
 import time
 import pytest
 
@@ -96,3 +99,36 @@ class TestGenesisRegistry:
                 break
         # Supply should never exceed the cap
         assert reg.get_total_genesis_supply() <= MAX_GENESIS_SUPPLY
+
+
+
+@pytest.mark.skipif(GenesisRegistry is None, reason="GenesisRegistry not implemented")
+class TestGenesisPersistence:
+    """Tests for genesis registry persistence."""
+
+    def test_save_and_load(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "genesis.json")
+            reg = GenesisRegistry(["0xval1", "0xval2", "0xval3"], store_path=path)
+            reg.add_attestation("0xalice", "0xval1")
+            reg.add_attestation("0xalice", "0xval2")
+            reg.add_attestation("0xalice", "0xval3")
+            assert reg.is_genesis_done("0xalice")
+
+            reg2 = GenesisRegistry(["0xval1", "0xval2", "0xval3"], store_path=path)
+            assert reg2.is_genesis_done("0xalice") is True
+            assert reg2.get_total_genesis_supply() == 50.0
+
+    def test_persistence_supply_tracking(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "genesis.json")
+            reg = GenesisRegistry(["0xval1", "0xval2", "0xval3"], store_path=path)
+            reg.add_attestation("0xalice", "0xval1")
+            reg.add_attestation("0xalice", "0xval2")
+            reg.add_attestation("0xalice", "0xval3")
+
+            reg2 = GenesisRegistry(["0xval1", "0xval2", "0xval3"], store_path=path)
+            reg2.add_attestation("0xbob", "0xval1")
+            reg2.add_attestation("0xbob", "0xval2")
+            reg2.add_attestation("0xbob", "0xval3")
+            assert reg2.get_total_genesis_supply() == 100.0
