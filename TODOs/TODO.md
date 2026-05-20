@@ -57,5 +57,30 @@
 - `src/conflict_detector.py` — детекция конфликтов
 - `src/gossip_protocol.py` — распространение сообщений
 
-**Implementation Plan:** 5 phases, 50+ tests, TDD approach
+**Implementation Plan:** 6 phases completed, 200 tests. Full parallel branching with BFT consensus.
+
+---
+
+### TODO-0003: Monetary Policy, Timelocks & Tiny Script
+
+**Status:** 📋 DESCRIPTION PHASE  
+**Branch:** `brainstorm/taxoin-architecture`  
+**Goal:** Реализовать прозрачную монетарную политику (Bitcoin-style 21M cap), UTXO timelocks, и Tiny Script VM для смарт-контрактов
+
+**Key Features:**
+- Прозрачная эмиссия: халвинг каждые 210K блоков, кап 21M Taxoin
+- Отказ от PoW — блоки подписываются валидаторами
+- UTXO timelocks — временна́я блокировка средств (блокировка до высоты N)
+- Tiny Script — 15-20 стековых опкодов, без циклов, детерминизм
+- Contract storage — изолированное KV-хранилище для контрактов
+- Исполнение контрактов валидаторами при consensus (5/7 голосов)
+
+**Components:**
+- `src/monetary_policy.py` — MonetaryPolicy (supply, halving, cap)
+- `src/tiny_script.py` — TinyVM (execute, opcodes, storage)
+- `src/tiny_opcodes.py` — Opcode enum + definitions
+- `src/core.py` — UTXO.timelock, Opcode types
+- `src/branch_state.py` — contract_storage, locked_balance
+
+**Implementation Plan:** 6 phases, 60-80 tests, TDD approach
 
