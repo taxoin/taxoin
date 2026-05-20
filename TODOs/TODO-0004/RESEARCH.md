@@ -156,3 +156,11 @@ Circuits для: `prove_rating_above()`, `prove_tx_count_above()`, `prove_no_rec
 3. **Dispute Resolution — самое слабое место** — нужна детализация
 4. **Rating Formula — самое простое улучшение** — Bayesian average
 5. **ZK-Reputation — самое перспективное** — приватность без потери доверия
+
+### Что ещё требует внимания
+
+- **Circom/Noir circuits** — примеры ZK-circuit для prove_rating_above(), prove_tx_count_above() описаны в TODO-0004D, но код не написан
+- **iExec PoCo vs Taxoin MA** — iExec использует TEE + staking для compute-верификации. Taxoin — mutual attestation без TEE. Разные ниши
+- **EAS (Ethereum Attestation Service)** — готовый протокол для on-chain attestations. Можно использовать как альтернативный бэкенд для Service Registry
+- **Solidity-имплементация** — неактуальна для текущей архитектуры (Python/Git), но полезна при портировании на EVM
+- **Банкнота Taxoin** — дизайн/макет физической банкноты «УЙе» (упоминался в Grok-дискуссии)
