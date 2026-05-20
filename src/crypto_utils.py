@@ -75,3 +75,18 @@ def verify(public_key: ec.EllipticCurvePublicKey, data: str, signature_hex: str)
         return True
     except InvalidSignature:
         return False
+
+
+def private_key_from_pem(pem_data: str) -> ec.EllipticCurvePrivateKey:
+    """Load a private key from PEM string."""
+    return serialization.load_pem_private_key(
+        pem_data.encode("utf-8"),
+        password=None,
+    )
+
+
+def public_key_from_pem(pem_data: str) -> ec.EllipticCurvePublicKey:
+    """Load a public key from PEM string."""
+    return serialization.load_pem_public_key(
+        pem_data.encode("utf-8"),
+    )

@@ -10,6 +10,7 @@ from typing import Optional
 
 from .branch_state import BranchState
 from .conflict_detector import ConflictDetector, MergeResult, ResolutionStrategy
+from .validator_network import ValidatorNode, ValidatorSet, ValidatorNetwork
 from .core import Account, AsyncTransaction, Block, BlockHeader, Transaction, TxOutput
 from .git_backend import GitBlockchain
 from .mempool import Mempool
@@ -31,6 +32,7 @@ class BranchManager:
         self.git = GitBlockchain(repo_path)
         self.branches: dict[str, BranchState] = {}
         self._sequence_counters: dict[tuple[str, int], int] = {}  # (wallet, timestamp) -> sequence
+        self._validator_network: Optional[ValidatorNetwork] = None
 
         # Initialize main branch state
         self._init_main_state()
@@ -414,3 +416,32 @@ class BranchManager:
             conflicts=conflicts,
             message=f"Successfully merged '{source}' into '{target}'",
         )
+
+    # ── Validator Network Integration ─────────────────────────────────
+
+    def init_validator_network(self, count: int = 7) -> None:
+        """Initialize a validator network with the given number of validators.
+
+        Args:
+            count: Number of validators to create (default: 7)
+        """
+        validators: list[ValidatorNode] = []
+        private_keys: dict[str, str] = {}
+
+        for _ in range(count):
+            node, priv_key_pem = ValidatorNode.generate_with_private_key()
+            validators.append(node)
+            private_keys[node.address] = priv_key_pem
+
+        vset = ValidatorSet(validators)
+        self._validator_network = ValidatorNetwork(vset, private_keys)
+
+    def get_validators(self) -> list[ValidatorNode]:
+        """Get all validators in the network.
+
+        Returns:
+            List of validator nodes, or empty list if network not initialized
+        """
+        if not self._validator_network:
+            return []
+        return self._validator_network.validator_set.get_active_validators()
