@@ -63,6 +63,7 @@
 | **0004E** | Cognitive PoW — AI-hard prompts for agents | ⚪ | ✅ Documented |
 | **0004F** | Technical Wishlist — constitution, sharding, mobile, formal verif | 🔵 | 📝 Spec |
 | **0004G** | 🆕 **Path to Public** — Docker, REST API, Telegram Wallet, QR | 🔴 **P0** | 🚀 **Start here** |
+| **0004H** | **Throughput** — batch commits, LevelDB, async git | 🟡 **P1** | 📝 Spec |
 
 ### 🚀 TODO-0004G: Path to Public (первая задача к реализации)
 
