@@ -10,6 +10,7 @@ from typing import Optional
 
 from .branch_state import BranchState
 from .conflict_detector import ConflictDetector, MergeResult, ResolutionStrategy
+from .attested_tx import AttestedTransaction, BalanceHold
 from .consensus import MergeConsensus
 from .validator_network import ValidatorNode, ValidatorSet, ValidatorNetwork
 from .core import Account, AsyncTransaction, Block, BlockHeader, Transaction, TxOutput
@@ -34,6 +35,7 @@ class BranchManager:
         self.branches: dict[str, BranchState] = {}
         self._sequence_counters: dict[tuple[str, int], int] = {}  # (wallet, timestamp) -> sequence
         self._validator_network: Optional[ValidatorNetwork] = None
+        self._pending_attested_txs: dict[str, AttestedTransaction] = {}
 
         # Initialize main branch state
         self._init_main_state()
@@ -162,6 +164,21 @@ class BranchManager:
         # Submit to mempool
         success = await branch_state.mempool.submit(tx)
         return success, "ok" if success else "failed to submit"
+
+    def submit_attested_tx(
+        self,
+        tx: AttestedTransaction,
+        balances: dict[str, float],
+        branch_name: str = "",
+    ) -> bool:
+        if tx.amount <= 0:
+            return False
+        from .attested_tx import BalanceHold as BH
+        hold = BH(balances)
+        result = hold.create_hold(tx.consumer, tx.amount, tx.tx_id)
+        if result:
+            self._pending_attested_txs[branch_name] = (tx, balances)
+        return result
 
     def mine_block_on_branch(
         self,
@@ -498,7 +515,17 @@ class BranchManager:
             main_state=main_state,
         )
 
-        return round.result or MergeResult(
+        result = round.result or MergeResult(
             success=False,
             message=f"Consensus failed: {round.status.value}",
         )
+
+        # On consensus success, claim any attested tx holds
+        if result.success:
+            attested = self._pending_attested_txs.pop(branch_name, None)
+            if attested:
+                tx, bals = attested
+                if tx.provider in bals:
+                    bals[tx.provider] += tx.amount
+
+        return result
