@@ -8,7 +8,7 @@ import tempfile
 import pytest
 
 from src.blockchain import BlockchainEngine
-from src.core import AsyncTransaction
+from src.core import Account, AsyncTransaction
 from src.crypto_utils import (
     generate_keypair,
     private_key_to_address,
@@ -382,3 +382,95 @@ class TestFullScenario:
         block = engine.mine_block(miner)
         assert block is not None
         assert engine.mempool.get_pending_count() == 0
+
+
+# ─── Parallel Branching Integration ──────────────────────────────────────
+
+try:
+    from src.branch_manager import BranchManager
+except ImportError:
+    BranchManager = None
+
+try:
+    from src.consensus import MergeConsensus
+except ImportError:
+    MergeConsensus = None
+
+
+@pytest.mark.skipif(BranchManager is None or MergeConsensus is None,
+                    reason="BranchManager or Consensus not implemented")
+class TestParallelBranching:
+    """End-to-end integration test for parallel branching with consensus."""
+
+    def test_full_parallel_branching_workflow(self):
+        """
+        Full parallel branching workflow:
+        1. Create BranchManager
+        2. Set up main state with an account
+        3. Create a branch
+        4. Initialize validator network
+        5. Run consensus to merge the branch
+        6. Verify state was merged correctly
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = BranchManager(tmpdir)
+
+            # Setup main state
+            main = manager.get_main_state()
+            main.accounts["0xalice"] = Account(address="0xalice", balance=1000.0, nonce=3)
+            main.accounts["0xbob"] = Account(address="0xbob", balance=500.0, nonce=1)
+
+            # Create a branch
+            branch_name = manager.create_branch("0xalice")
+            assert branch_name is not None
+            assert branch_name in manager.branches
+
+            # Modify branch state — add a NEW account (no conflicts with main)
+            branch_state = manager.get_branch_state(branch_name)
+            branch_state.accounts["0xcarol"] = Account(address="0xcarol", balance=100.0, nonce=0)
+
+            # Initialize validators
+            manager.init_validator_network(count=7)
+            assert len(manager.get_validators()) == 7
+
+            # Run consensus
+            result = manager.run_consensus(branch_name)
+
+            # Verify merge was successful
+            assert result.success is True, f"Merge failed: {result.message}"
+            assert result.merge_commit is not None
+
+            # Verify state was merged correctly
+            main = manager.get_main_state()
+            assert main.accounts["0xalice"].balance == 1000.0  # unchanged by branch
+            assert main.accounts["0xbob"].balance == 500.0     # unchanged
+            assert main.accounts["0xcarol"].balance == 100.0   # added by branch
+
+            # Verify source branch was cleaned up
+            assert branch_name not in manager.branches
+
+    def test_parallel_branching_with_conflict_rejection(self):
+        """
+        Parallel branching with conflict detection:
+        1. Create branch with diverging state
+        2. Run consensus — should reject due to balance mismatch
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manager = BranchManager(tmpdir)
+
+            main = manager.get_main_state()
+            main.accounts["0xalice"] = Account(address="0xalice", balance=1000.0, nonce=5)
+
+            # Create branch while main has balance=1000
+            branch_name = manager.create_branch("0xalice")
+            branch_state = manager.get_branch_state(branch_name)
+
+            # Modify ONLY the branch (main stays at 1000)
+            branch_state.accounts["0xalice"] = Account(address="0xalice", balance=50.0, nonce=0)
+
+            # Initialize validators
+            manager.init_validator_network(count=7)
+            result = manager.run_consensus(branch_name)
+
+            # Should reject due to balance mismatch
+            assert result.success is False

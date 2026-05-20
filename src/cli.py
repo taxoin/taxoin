@@ -22,6 +22,7 @@ from pathlib import Path
 import click
 
 from .blockchain import BlockchainEngine
+from .branch_manager import BranchManager
 from .core import AsyncTransaction, Account
 from .crypto_utils import (
     generate_keypair, private_key_to_address, public_key_to_address,
@@ -229,6 +230,114 @@ def address():
         click.echo(f"Address: {wallet_data['address']}")
     else:
         click.echo("No wallet found. Create one with: taxoin wallet new")
+
+
+# ── Branch Commands ──────────────────────────────────────────────────────
+
+@cli.group()
+def branch():
+    """Branch management (parallel transaction branches)."""
+    pass
+
+
+@branch.command()
+@click.argument("wallet")
+def create(wallet: str):
+    """Create a new transaction branch for a wallet."""
+    manager = BranchManager(".")
+    branch_name = manager.create_branch(wallet)
+    click.echo(f"✓ Branch created: {branch_name}")
+
+
+@branch.command(name="list")
+def list_branches():
+    """List all branches."""
+    manager = BranchManager(".")
+    branches = manager.list_branches()
+    if not branches:
+        click.echo("No branches found.")
+        return
+
+    click.echo("Branches:")
+    for b in sorted(branches):
+        click.echo(f"  • {b}")
+
+
+@branch.command()
+@click.argument("branch_name")
+def merge(branch_name: str):
+    """Merge a branch via validator consensus."""
+    manager = BranchManager(".")
+    manager.init_validator_network(count=7)
+
+    click.echo(f"Running consensus for {branch_name}...")
+    result = manager.run_consensus(branch_name)
+
+    if result.success:
+        click.echo(f"✓ Merged: {result.merge_commit[:16]}...")
+    else:
+        click.echo(f"✗ Failed: {result.message}")
+        if result.conflicts:
+            click.echo(f"  Conflicts: {len(result.conflicts)}")
+            for c in result.conflicts:
+                click.echo(f"    - {c.detail}")
+
+
+@branch.command()
+@click.argument("branch_name")
+def status(branch_name: str):
+    """Show branch status and state info."""
+    manager = BranchManager(".")
+    state = manager.get_branch_state(branch_name)
+
+    if not state:
+        click.echo(f"Branch '{branch_name}' does not exist.")
+        return
+
+    click.echo(f"Branch:       {state.branch_name}")
+    click.echo(f"Parent hash:  {state.parent_hash[:20]}...")
+    click.echo(f"Accounts:     {len(state.accounts)}")
+    click.echo(f"UTXOs:        {len(state.utxo_set)}")
+    click.echo(f"Transactions: {state.transaction_count}")
+    click.echo(f"Spent UTXOs:  {len(state.spent_utxos)}")
+    click.echo(f"Nonce tracks: {len(state.used_nonces)}")
+    click.echo(f"Created:      {state.created_at}")
+
+
+# ── Validator Commands ───────────────────────────────────────────────────
+
+@cli.group()
+def validator():
+    """Validator network management."""
+    pass
+
+
+@validator.command()
+@click.option("--count", default=7, help="Number of validators (default: 7)")
+def init(count: int):
+    """Initialize the validator network."""
+    manager = BranchManager(".")
+    manager.init_validator_network(count=count)
+    validators = manager.get_validators()
+    click.echo(f"✓ Validator network initialized with {len(validators)} validators")
+    for v in validators:
+        click.echo(f"  {v.address} (power={v.voting_power})")
+
+
+@validator.command(name="list")
+def list_validators():
+    """List all validators."""
+    manager = BranchManager(".")
+    validators = manager.get_validators()
+
+    if not validators:
+        click.echo("No validators. Run: taxoin validator init")
+        return
+
+    click.echo(f"{'Address':<44} {'Power':<8} {'Status':<12}")
+    click.echo("─" * 66)
+    for v in validators:
+        click.echo(f"{v.address:<44} {v.voting_power:<8} {v.status.value:<12}")
 
 
 if __name__ == "__main__":
