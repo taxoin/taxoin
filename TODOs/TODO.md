@@ -21,96 +21,78 @@
 
 ---
 
-## Active Tasks
+## Completed
 
-### TODO-0001: Блокчейн на основе git
+### ✅ TODO-0001: Блокчейн на основе git
 
-**Status:** ✅ COMPLETED  
-**Goal:** Реализовать простую программу блокчейна, использующую git как бэкенд, с базовыми концепциями Bitcoin (UTXO, PoW) и Ethereum (account model, async transactions)  
-**Components:** `src/blockchain.py`, `src/wallet.py`, `src/cli.py`, `tests/`
+**Goal:** Базовый блокчейн UTXO + Account model на git  
+**Tests:** 67 | **Status:** ✅ COMPLETED
 
-**Completion Summary:**
-- ✅ All 7 steps completed (TDD approach)
-- ✅ 67 tests passing (including 9 integration tests)
-- ✅ Full end-to-end scenarios tested
-- ✅ Bug fixed: transaction state application in mining
+### ✅ TODO-0002: Параллельные ветвления транзакций с консенсусом
+
+**Goal:** Parallel branching + BFT consensus (6 phases, 200 tests)  
+**Tests:** 200 | **Status:** ✅ COMPLETED
 
 ---
 
-### TODO-0002: Параллельные ветвления транзакций с консенсусом
+## In Progress
 
-**Status:** ✅ COMPLETED  
-**Branch:** `feature/parallel-branching`  
-**Goal:** Реализовать параллельную обработку транзакций через git-ветки с Byzantine Fault Tolerant консенсусом для слияния  
-
-**Key Features:**
-- Каждый кошелёк создаёт независимую ветку для транзакций
-- Неограниченный параллельный процессинг (no blocking)
-- Автоматическая детекция конфликтов (UTXO, nonce, balance)
-- Tendermint-style консенсус (7 валидаторов, 2f+1 quorum)
-- Гарантия целостности и непротиворечивости через BFT
-
-**Components:** 
-- `src/branch_manager.py` — управление ветками
-- `src/validator_network.py` — сеть валидаторов
-- `src/consensus.py` — Tendermint консенсус
-- `src/conflict_detector.py` — детекция конфликтов
-- `src/gossip_protocol.py` — распространение сообщений
-
-**Implementation Plan:** 6 phases completed, 200 tests. Full parallel branching with BFT consensus.
-
----
-
-### TODO-0003: Proof of Contribution — Service Economy
+### 🎯 TODO-0003: Proof of Contribution — Service Economy
 
 **Status:** 📋 DESCRIPTION PHASE  
 **Branch:** `feature/proof-of-contribution`  
-**Goal:** Заменить бесполезный PoW на Proof of Contribution — экономику полезных сервисов (SMS, GPU, API, такси), где каждый Taxoin заработан реальным вкладом
+**Goal:** PoW → Proof of Contribution. Genesis, Service Registry, Mutual Attestation, Balance Hold, Reputation  
+**Tests:** 256 (core + mvp)  
+**Components:** `genesis.py`, `service_registry.py`, `attested_tx.py`, `reputation.py`
 
-**Key Features:**
-- PoW → Proof of Contribution: майнинг CPU заменён на предоставление сервисов
-- Genesis: 1M Ⓣ для 7 основателей, дальнейшая эмиссия только через сервисы
-- Service Registry: git-based реестр всех сервисов с ценами и рейтингом
-- Mutual Attestation: обоюдная подпись (provider + consumer) для каждой транзакции
-- Balance Hold: резервирование Ⓣ на время выполнения заказа
-- Reputation: рейтинговая система для защиты от спама и мошенников
-
-**Components:**
-- `src/service_registry.py` — реестр сервисов + регистрация
-- `src/attested_tx.py` — обоюдноподписанные транзакции
-- `src/reputation.py` — рейтинг и репутация
-- `src/balance_hold.py` — резервирование баланса
-- `src/genesis.py` — начальное распределение 1M Ⓣ
-
-**Implementation Plan:** 5 phases, 60-80 tests, TDD approach
+**Implementation:** MVP core done (mvp-v3). Needs integration + polish.
 
 ---
 
-### TODO-0004: Research & Improvements
+### 🔬 TODO-0004: Research & Improvements
 
 **Status:** 🔬 RESEARCH PHASE  
 **Goal:** Улучшение Taxoin на основе анализа конкурентов, криптографии и UX
 
-**Sub-tasks:**
+| ID | Тема | Приоритет | Статус |
+|----|------|-----------|--------|
+| **0004A** | Rating Formula — Bayesian average, time decay, anti-manipulation | 🟡 | 📝 Spec |
+| **0004B** | Dispute Resolution — arbitrator, 5/7, timeout, evidence | 🔴 | 📝 Spec |
+| **0004C** | UX — seamless mutual attestation, relay, QR | 🟡 | 📝 Spec |
+| **0004D** | ZK-Reputation — private layer via Noir/UniRep | 🔵 | 📝 Spec |
+| **0004E** | Cognitive PoW — AI-hard prompts for agents | ⚪ | ✅ Documented |
+| **0004F** | Technical Wishlist — constitution, sharding, mobile, formal verif | 🔵 | 📝 Spec |
+| **0004G** | 🆕 **Path to Public** — Docker, REST API, Telegram Wallet, QR | 🔴 **P0** | 🚀 **Start here** |
 
-- **0004A: Rating Formula** — Bayesian average, time decay, anti-manipulation
-  → `TODOs/TODO-0004/TODO-0004A_RATING.md`
-  
-- **0004B: Dispute Resolution** — arbitrator, 5/7 verdict, timeout, evidence
-  → `TODOs/TODO-0004/TODO-0004B_DISPUTES.md`
-  
-- **0004C: UX — Mutual Attestation** — seamless signing, relay, QR
-  → `TODOs/TODO-0004/TODO-0004C_UX.md`
-  
-- **0004D: ZK-Reputation** — private reputation layer (Noir, UniRep)
-  → `TODOs/TODO-0004/TODO-0004D_ZK.md`
-- **0004E: Cognitive PoW** — AI-hard prompts, constrained synthesis,
-  multi-domain reasoning as analog of Bitcoin hash computation
-  → `TODOs/TODO-0004/TODO-0004E_COGNITIVE_POW.md`
+### 🚀 TODO-0004G: Path to Public (первая задача к реализации)
 
-- **0004F: Technical Wishlist** — mobile blockchain: constitution layer,
-  governance, light client, zk, sharding, offline-first, formal verification
-  → `TODOs/TODO-0004/TODO-0004F_TECH_WISHLIST.md`
+**Goal:** Чтобы любой бизнес (таксопарк, парикмахерская, биржа труда)
+мот скачать-поставить-запустить Taxoin за 5 минут.
 
-- **0004G: Path to Public** — Docker, REST API, web wallet, Telegram Mini App, QR payments
-  → `TODOs/TODO-0004/TODO-0004G_PATH_TO_PUBLIC.md`
+**Что делаем (1 день):**
+```
+Шаг 1: Docker Compose (3 валидатора + API gateway)
+       → docker compose up = готовая сеть
+Шаг 2: REST API (FastAPI)
+       → POST/GET для wallet, balance, tx, services
+Шаг 3: Telegram Mini App
+       → кошелёк прямо в Telegram (никаких установок)
+Шаг 4: QR-платежи
+       → платить как в Сбербанке
+Шаг 5: Документация + deploy
+       → README, OpenAPI, примеры для бизнеса
+```
+
+**Детали:** `TODOs/TODO-0004/TODO-0004G_PATH_TO_PUBLIC.md`
+
+---
+
+## Stack Reference
+
+```
+Source:   src/ (18 модулей)
+Tests:    tests/ (256 passed)
+Storage:  Git backend + JSON persistence
+Consensus: Tendermint 5/7 (BFT f=2)
+Economy:  Proof of Contribution + Mutual Attestation
+Tags:     mvp-v1, mvp-v2, mvp-v3, architecture-v1, research-v1
