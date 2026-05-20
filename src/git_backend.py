@@ -248,3 +248,191 @@ class GitBlockchain:
                     "tx_count": 0,
                 })
         return blocks
+
+    # ── Branch Management (TODO-0002 Phase 1.1) ──────────────────────
+
+    def create_branch(self, branch_name: str, from_ref: str = "HEAD") -> str:
+        """Create a new git branch from a reference.
+
+        Args:
+            branch_name: Name of the new branch
+            from_ref: Reference to branch from (commit SHA, branch name, or HEAD)
+
+        Returns:
+            The branch name
+
+        Raises:
+            GitBackendError: If branch already exists or creation fails
+        """
+        try:
+            _git("branch", branch_name, from_ref, cwd=self.repo_path)
+            return branch_name
+        except GitBackendError as e:
+            if "already exists" in str(e):
+                raise GitBackendError(f"Branch '{branch_name}' already exists")
+            raise
+
+    def switch_branch(self, branch_name: str) -> None:
+        """Switch to a different branch.
+
+        Args:
+            branch_name: Name of the branch to switch to
+
+        Raises:
+            GitBackendError: If branch doesn't exist or switch fails
+        """
+        _git("checkout", branch_name, cwd=self.repo_path)
+
+    def list_branches(self) -> list[str]:
+        """List all branches in the repository.
+
+        Returns:
+            List of branch names
+        """
+        try:
+            output = _git("branch", "--list", cwd=self.repo_path)
+            branches = []
+            for line in output.split("\n"):
+                line = line.strip()
+                if line:
+                    # Remove * prefix from current branch
+                    branch = line.lstrip("* ")
+                    branches.append(branch)
+            return branches
+        except GitBackendError:
+            return []
+
+    def get_current_branch(self) -> str:
+        """Get the name of the current branch.
+
+        Returns:
+            Current branch name
+
+        Raises:
+            GitBackendError: If not on a branch (detached HEAD)
+        """
+        return _git("rev-parse", "--abbrev-ref", "HEAD", cwd=self.repo_path)
+
+    def delete_branch(self, branch_name: str, force: bool = False) -> None:
+        """Delete a branch.
+
+        Args:
+            branch_name: Name of the branch to delete
+            force: If True, force delete even if not fully merged
+
+        Raises:
+            GitBackendError: If branch doesn't exist or is current branch
+        """
+        flag = "-D" if force else "-d"
+        _git("branch", flag, branch_name, cwd=self.repo_path)
+
+    def get_branch_head(self, branch_name: str) -> str:
+        """Get the commit SHA at the head of a branch.
+
+        Args:
+            branch_name: Name of the branch
+
+        Returns:
+            Commit SHA (40 hex chars)
+
+        Raises:
+            GitBackendError: If branch doesn't exist
+        """
+        return _git("rev-parse", branch_name, cwd=self.repo_path)
+
+    def merge_branches(self, source: str, target: str,
+                      strategy: str = "ours") -> str:
+        """Merge source branch into target branch.
+
+        Args:
+            source: Source branch name
+            target: Target branch name
+            strategy: Merge strategy (default: "ours")
+
+        Returns:
+            Commit SHA of the merge commit
+
+        Raises:
+            GitBackendError: If merge fails or conflicts occur
+        """
+        # Switch to target branch
+        self.switch_branch(target)
+
+        # Merge with strategy
+        try:
+            _git("merge", source, "-X", strategy,
+                 "-m", f"Merge {source} into {target}",
+                 cwd=self.repo_path)
+            return _git("rev-parse", "HEAD", cwd=self.repo_path)
+        except GitBackendError as e:
+            # Abort merge on conflict
+            try:
+                _git("merge", "--abort", cwd=self.repo_path)
+            except GitBackendError:
+                pass
+            raise GitBackendError(f"Merge conflict: {e}")
+
+    def get_divergence(self, branch1: str, branch2: str) -> tuple[int, int]:
+        """Get number of commits ahead/behind between two branches.
+
+        Args:
+            branch1: First branch name
+            branch2: Second branch name
+
+        Returns:
+            Tuple of (commits_ahead, commits_behind)
+            - commits_ahead: commits in branch1 not in branch2
+            - commits_behind: commits in branch2 not in branch1
+        """
+        try:
+            # Commits in branch1 not in branch2
+            ahead = _git("rev-list", "--count", f"{branch2}..{branch1}",
+                        cwd=self.repo_path)
+            # Commits in branch2 not in branch1
+            behind = _git("rev-list", "--count", f"{branch1}..{branch2}",
+                         cwd=self.repo_path)
+            return int(ahead), int(behind)
+        except GitBackendError:
+            return 0, 0
+
+    def set_branch_metadata(self, branch_name: str, metadata: dict) -> None:
+        """Store metadata for a branch using git notes.
+
+        Args:
+            branch_name: Name of the branch
+            metadata: Dictionary of metadata to store
+        """
+        notes_json = json.dumps(metadata)
+
+        # Get branch head commit
+        try:
+            commit_sha = self.get_branch_head(branch_name)
+        except GitBackendError:
+            raise GitBackendError(f"Branch '{branch_name}' does not exist")
+
+        # Write to temp file
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write(notes_json)
+            temp_path = f.name
+
+        try:
+            _git("notes", "add", "-f", "-F", temp_path, commit_sha,
+                 cwd=self.repo_path)
+        finally:
+            os.unlink(temp_path)
+
+    def get_branch_metadata(self, branch_name: str) -> dict:
+        """Get metadata for a branch from git notes.
+
+        Args:
+            branch_name: Name of the branch
+
+        Returns:
+            Dictionary of metadata, or empty dict if no metadata exists
+        """
+        try:
+            commit_sha = self.get_branch_head(branch_name)
+            notes = _git("notes", "show", commit_sha, cwd=self.repo_path)
+            return json.loads(notes)
+        except (GitBackendError, json.JSONDecodeError):
+            return {}
