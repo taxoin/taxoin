@@ -227,7 +227,7 @@ def create_art(
             print(f"  [{i + 1:>4}/{total}] {date}  ({pct:.0f}%)")
 
     print(f"\n  Pushing to {remote_url} ...")
-    git("push", "-u", "origin", branch, cwd=work_dir)
+    git("push", "-u", "origin", branch, "--force", cwd=work_dir)
     print("  Done! ✓  Check your profile contribution graph.\n")
 
 
