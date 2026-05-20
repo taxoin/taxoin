@@ -9,6 +9,7 @@ import time
 from typing import Optional
 
 from .branch_state import BranchState
+from .conflict_detector import ConflictDetector, MergeResult, ResolutionStrategy
 from .core import Account, AsyncTransaction, Block, BlockHeader, Transaction, TxOutput
 from .git_backend import GitBlockchain
 from .mempool import Mempool
@@ -305,3 +306,111 @@ class BranchManager:
         """
         main_branch = self._get_main_branch_name()
         return self.branches[main_branch]
+
+    def merge_branch(
+        self,
+        source: str,
+        target: str | None = None,
+        strategy: ResolutionStrategy = ResolutionStrategy.ABORT,
+    ) -> MergeResult:
+        """Merge a source branch into a target branch with conflict detection.
+
+        Before performing the git merge, runs application-level conflict
+        detection on the branch states. If conflicts are found, the
+        resolution strategy determines whether to abort, prefer one side,
+        or raise for manual intervention.
+
+        Args:
+            source: Name of the source branch to merge from
+            target: Name of the target branch (default: main/master)
+            strategy: Resolution strategy for conflicts
+
+        Returns:
+            MergeResult indicating success/failure
+
+        Raises:
+            MergeConflictError: If strategy is MANUAL and conflicts exist
+            ValueError: If source or target branch doesn't exist
+        """
+        if target is None:
+            target = self._get_main_branch_name()
+
+        # Validate branches exist
+        source_state = self.branches.get(source)
+        if not source_state:
+            return MergeResult(
+                success=False,
+                message=f"Source branch '{source}' does not exist",
+            )
+
+        target_state = self.branches.get(target)
+        if not target_state:
+            return MergeResult(
+                success=False,
+                message=f"Target branch '{target}' does not exist",
+            )
+
+        # Run conflict detection
+        conflicts = ConflictDetector.detect_all(source_state, target_state)
+
+        # Resolve (or abort)
+        if conflicts:
+            result = ConflictDetector.resolve(conflicts, strategy)
+            if not result.success:
+                return result
+            # PREFER_SOURCE / PREFER_TARGET: continue with merge
+
+        # Perform git-level merge
+        try:
+            merge_commit = self.git.merge_branches(source, target, strategy="ours")
+        except Exception as e:
+            return MergeResult(
+                success=False,
+                message=f"Git merge failed: {e}",
+            )
+
+        # Apply source branch state to target
+        source_state = self.branches[source]
+
+        # Merge accounts: source values overwrite target for PREFER_SOURCE,
+        # or keep target values for PREFER_TARGET
+        if strategy in (ResolutionStrategy.PREFER_SOURCE, ResolutionStrategy.ABORT):
+            # ABORT with no conflicts: merge normally (source adds to target)
+            for addr, acct in source_state.accounts.items():
+                target_state.accounts[addr] = Account(
+                    address=acct.address,
+                    balance=acct.balance,
+                    nonce=max(
+                        acct.nonce,
+                        target_state.accounts.get(addr, Account(addr)).nonce,
+                    ),
+                )
+
+            # Merge UTXOs
+            for outpoint, utxo in source_state.utxo_set.items():
+                if outpoint not in target_state.utxo_set:
+                    target_state.utxo_set[outpoint] = utxo
+
+            # Merge spent_utxos and used_nonces
+            target_state.spent_utxos.update(source_state.spent_utxos)
+            for addr, nonces in source_state.used_nonces.items():
+                if addr not in target_state.used_nonces:
+                    target_state.used_nonces[addr] = set()
+                target_state.used_nonces[addr].update(nonces)
+
+        elif strategy == ResolutionStrategy.PREFER_TARGET:
+            # Keep target state as-is — nothing to merge state-wise
+            pass
+
+        target_state.transaction_count += source_state.transaction_count
+        target_state.last_updated = source_state.last_updated
+
+        # Clean up source branch state
+        self.branches.pop(source, None)
+
+        return MergeResult(
+            success=True,
+            merge_commit=merge_commit,
+            conflicts=conflicts,
+            message=f"Successfully merged '{source}' into '{target}'",
+        )

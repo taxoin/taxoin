@@ -8,7 +8,7 @@ import tempfile
 import time
 import pytest
 
-from src.core import Account, AsyncTransaction, Block, BlockHeader
+from src.core import Account, AsyncTransaction, Block, BlockHeader, UTXO
 from src.git_backend import GitBlockchain
 from src.mempool import Mempool
 
@@ -18,6 +18,13 @@ try:
     from src.branch_manager import BranchManager
 except ImportError:
     BranchManager = None
+
+try:
+    from src.conflict_detector import ConflictDetector, MergeResult, ResolutionStrategy
+except ImportError:
+    ConflictDetector = None
+    MergeResult = None
+    ResolutionStrategy = None
 
 
 @pytest.fixture
@@ -283,3 +290,108 @@ class TestBranchMetadata:
 
         assert "status" in metadata
         assert metadata["status"] == "active"
+
+
+@pytest.mark.skipif(BranchManager is None or MergeResult is None or ResolutionStrategy is None,
+                    reason="BranchManager or ConflictDetector not implemented yet")
+class TestBranchMerge:
+    """Tests for merging branches with conflict detection."""
+
+    def test_merge_branch_no_conflicts_success(self, branch_manager):
+        """Two branches with independent accounts — merge succeeds."""
+        # Create source branch
+        source = branch_manager.create_branch("0xalice")
+        source_state = branch_manager.get_branch_state(source)
+        source_state.accounts["0xalice"] = Account(address="0xalice", balance=100.0, nonce=0)
+
+        # Merge into main
+        result = branch_manager.merge_branch(source)
+
+        assert result.success is True
+        assert result.merge_commit is not None
+        assert len(result.conflicts) == 0
+
+        # Source branch state should be merged into target (main)
+        main_state = branch_manager.get_main_state()
+        assert "0xalice" in main_state.accounts
+        assert main_state.accounts["0xalice"].balance == 100.0
+
+    def test_merge_branch_updates_main_state(self, branch_manager):
+        """After merge, main state reflects merged changes."""
+        # Setup main with an account
+        main_state = branch_manager.get_main_state()
+        main_state.accounts["0xbob"] = Account(address="0xbob", balance=500.0, nonce=0)
+
+        # Create branch, modify account
+        source = branch_manager.create_branch("0xbob")
+        source_state = branch_manager.get_branch_state(source)
+        source_state.accounts["0xbob"] = Account(address="0xbob", balance=300.0, nonce=1)
+        source_state.accounts["0xalice"] = Account(address="0xalice", balance=200.0, nonce=0)
+
+        # Merge with PREFER_SOURCE (balance conflict exists: 300 vs 500)
+        result = branch_manager.merge_branch(source, strategy=ResolutionStrategy.PREFER_SOURCE)
+
+        assert result.success is True
+
+        # Main should have both accounts, with updated bob balance
+        main_state = branch_manager.get_main_state()
+        assert main_state.accounts["0xbob"].balance == 300.0
+        assert main_state.accounts["0xalice"].balance == 200.0
+
+    def test_merge_branch_with_conflicts_aborts(self, branch_manager):
+        """Double-spend conflict — ABORT returns MergeResult with success=False."""
+        # Setup: create UTXO in main
+        main_state = branch_manager.get_main_state()
+        main_state.utxo_set[("tx1", 0)] = UTXO(tx_id="tx1", output_index=0, address="0xalice", amount=100.0)
+
+        # Create branch, spend the same UTXO in both
+        source = branch_manager.create_branch("0xalice")
+        source_state = branch_manager.get_branch_state(source)
+        source_state.utxo_set[("tx1", 0)] = UTXO(tx_id="tx1", output_index=0, address="0xalice", amount=100.0)
+        source_state.spent_utxos.add(("tx1", 0))
+        main_state.spent_utxos.add(("tx1", 0))
+
+        # Merge — should detect double-spend
+        result = branch_manager.merge_branch(source, strategy=ResolutionStrategy.ABORT)
+
+        assert result.success is False
+        assert len(result.conflicts) > 0
+        assert "utxo_double_spend" in result.conflicts[0].conflict_type.value
+
+    def test_merge_branch_nonexistent_source_fails(self, branch_manager):
+        """Merging non-existent branch fails gracefully."""
+        result = branch_manager.merge_branch("nonexistent-branch")
+
+        assert result.success is False
+        assert "does not exist" in result.message.lower()
+
+    def test_merge_branch_with_conflict_prefer_source(self, branch_manager):
+        """PREFER_SOURCE strategy resolves conflict by choosing source values."""
+        # Setup account with diverging balances
+        main_state = branch_manager.get_main_state()
+        main_state.accounts["0xalice"] = Account(address="0xalice", balance=1000.0, nonce=5)
+
+        # Create branch with different balance
+        source = branch_manager.create_branch("0xalice")
+        source_state = branch_manager.get_branch_state(source)
+        source_state.accounts["0xalice"] = Account(address="0xalice", balance=900.0, nonce=6)
+
+        # Merge with PREFER_SOURCE
+        result = branch_manager.merge_branch(source, strategy=ResolutionStrategy.PREFER_SOURCE)
+
+        assert result.success is True
+        assert len(result.conflicts) > 0  # Should detect balance mismatch
+
+        # Source balance should win
+        main_state = branch_manager.get_main_state()
+        assert main_state.accounts["0xalice"].balance == 900.0
+
+    def test_merge_branch_source_removed_after_merge(self, branch_manager):
+        """Source branch is removed from BranchManager after merge."""
+        source = branch_manager.create_branch("0xalice")
+        assert source in branch_manager.branches
+
+        result = branch_manager.merge_branch(source)
+        assert result.success is True
+
+        assert source not in branch_manager.branches
