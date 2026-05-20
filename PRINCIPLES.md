@@ -1,6 +1,6 @@
 # PRINCIPLES — Gitchain Development Manifesto
 
-> SIGNED NOT_FOR_COMPACTION. Священные принципы разработки для всех агентов.
+> SIGNED NOT_FOR_COMPACTION. Sacred development principles for all agents.
 
 ---
 
@@ -8,17 +8,17 @@
 
 ### 1. DRY (Don't Repeat Yourself)
 
-**Правило:** Каждая часть знания должна иметь единственное, недвусмысленное, авторитетное представление в системе.
+**Rule:** Every piece of knowledge must have a single, unambiguous, authoritative representation in the system.
 
-**Применение:**
-- Переиспользуй существующий код вместо копирования
-- Создавай утилиты для повторяющихся операций
-- Один источник правды для данных
-- Документация в одном месте (не дублируй в коде и README)
+**Application:**
+- Reuse existing code instead of copying
+- Create utilities for repeated operations
+- One source of truth for data
+- Documentation in one place (do not duplicate in code and README)
 
-**Примеры:**
+**Examples:**
 ```python
-# ❌ BAD: Дублирование логики
+# ❌ BAD: Duplicated logic
 def validate_tx_in_mempool(tx):
     if tx.sender not in accounts:
         return False
@@ -33,7 +33,7 @@ def validate_tx_in_block(tx):
         return False
     return True
 
-# ✅ GOOD: Единая функция
+# ✅ GOOD: Single function
 def validate_transaction(tx, accounts):
     if tx.sender not in accounts:
         return False
@@ -46,17 +46,17 @@ def validate_transaction(tx, accounts):
 
 ### 2. KISS (Keep It Simple, Stupid)
 
-**Правило:** Простота — высшая форма изощрённости. Сложность — враг надёжности.
+**Rule:** Simplicity is the ultimate sophistication. Complexity is the enemy of reliability.
 
-**Применение:**
-- Выбирай простейшее решение, которое работает
-- Избегай преждевременной оптимизации
-- Не добавляй функциональность "на будущее"
-- Если можешь объяснить за 30 секунд — достаточно просто
+**Application:**
+- Choose the simplest working solution
+- Avoid premature optimization
+- Do not add "future-proof" functionality
+- If you can explain it in 30 seconds — it is simple enough
 
-**Примеры:**
+**Examples:**
 ```python
-# ❌ BAD: Излишняя сложность
+# ❌ BAD: Needless complexity
 class AbstractTransactionValidatorFactory:
     def create_validator(self, type: str) -> AbstractValidator:
         if type == "utxo":
@@ -64,42 +64,42 @@ class AbstractTransactionValidatorFactory:
         elif type == "account":
             return AccountValidatorImpl()
 
-# ✅ GOOD: Прямолинейно
+# ✅ GOOD: Straightforward
 def validate_utxo_tx(tx): ...
 def validate_account_tx(tx): ...
 ```
 
-**Критерии простоты:**
-- Меньше строк кода (но не в ущерб читаемости)
-- Меньше уровней абстракции
-- Меньше зависимостей
-- Понятно новичку в проекте
+**Simplicity criteria:**
+- Fewer lines of code (but not at the expense of readability)
+- Fewer abstraction layers
+- Fewer dependencies
+- Understandable by a newcomer to the project
 
 ---
 
 ### 3. TDD (Test-Driven Development)
 
-**Правило:** Тесты пишутся ДО кода. Red → Green → Refactor.
+**Rule:** Tests are written BEFORE code. Red → Green → Refactor.
 
-**Цикл TDD:**
-1. **Red**: Напиши тест, который падает
-2. **Green**: Напиши минимальный код, чтобы тест прошёл
-3. **Refactor**: Улучши код, сохраняя зелёные тесты
+**TDD cycle:**
+1. **Red**: Write a failing test
+2. **Green**: Write minimal code to pass the test
+3. **Refactor**: Improve code while keeping tests green
 
-**Применение:**
+**Application:**
 ```python
-# Шаг 1: RED — тест падает
+# Step 1: RED — test fails
 def test_create_branch():
     manager = BranchManager()
     branch = manager.create_branch("0xalice")
     assert branch.startswith("branch/0xalice/")
 
-# Шаг 2: GREEN — минимальная реализация
+# Step 2: GREEN — minimal implementation
 class BranchManager:
     def create_branch(self, wallet):
         return f"branch/{wallet}/{int(time.time())}_001"
 
-# Шаг 3: REFACTOR — улучшаем
+# Step 3: REFACTOR — improve
 class BranchManager:
     def create_branch(self, wallet: str) -> str:
         timestamp = int(time.time())
@@ -107,32 +107,32 @@ class BranchManager:
         return f"branch/{wallet}/{timestamp}_{sequence:03d}"
 ```
 
-**Преимущества:**
-- Код покрыт тестами по определению
-- Тесты — живая документация
-- Рефакторинг безопасен
-- Меньше багов в продакшене
+**Benefits:**
+- Code is covered by tests by definition
+- Tests are living documentation
+- Refactoring is safe
+- Fewer bugs in production
 
-**Правила:**
-- Один тест = одна проверка
-- Тесты должны быть быстрыми (< 1s)
-- Тесты должны быть изолированными (не зависят друг от друга)
-- Тесты должны быть детерминированными (всегда один результат)
+**Rules:**
+- One test = one assertion
+- Tests must be fast (< 1s)
+- Tests must be isolated (no interdependencies)
+- Tests must be deterministic (always the same result)
 
 ---
 
 ### 4. TODO-DONE Workflow
 
-**Правило:** Каждая задача проходит через формальный жизненный цикл с документацией.
+**Rule:** Every task goes through a formal documented lifecycle.
 
 #### TODO Structure
 
 ```
 TODOs/
-├── TODO.md                    # Список активных задач
-├── DONE.md                    # История завершённых задач
+├── TODO.md                    # Active task list
+├── DONE.md                    # Completed task history
 ├── TODO-0001/
-│   └── DESCRIPTION.md         # Полная спецификация
+│   └── DESCRIPTION.md         # Full specification
 ├── TODO-0002/
 │   └── DESCRIPTION.md
 └── ...
@@ -142,32 +142,32 @@ TODOs/
 
 ```
 1. CREATION
-   ├─ Создай TODO-XXXX/DESCRIPTION.md
-   ├─ Опиши: Problematic, Way to solve, Dependencies
-   └─ Добавь в TODO.md
+   ├─ Create TODO-XXXX/DESCRIPTION.md
+   ├─ Describe: Problematic, Way to solve, Dependencies
+   └─ Add to TODO.md
 
 2. DESCRIPTION PHASE
-   ├─ Детальное планирование
-   ├─ Архитектурные решения
-   ├─ TDD план (какие тесты писать)
-   └─ Только после завершения → переход к реализации
+   ├─ Detailed planning
+   ├─ Architectural decisions
+   ├─ TDD plan (which tests to write)
+   └─ Only after completion → proceed to implementation
 
 3. IMPLEMENTATION
-   ├─ Следуй TDD циклу
-   ├─ Документируй проблемы в TODO-XXXX/
-   └─ Коммить часто, осмысленные сообщения
+   ├─ Follow the TDD cycle
+   ├─ Document problems in TODO-XXXX/
+   └─ Commit often, meaningful messages
 
 4. COMPLETION
-   ├─ Все тесты зелёные
-   ├─ Код отрефакторен
-   ├─ Документация обновлена
-   └─ Closure stamp в DONE.md
+   ├─ All tests green
+   ├─ Code refactored
+   ├─ Documentation updated
+   └─ Closure stamp in DONE.md
 ```
 
 #### DESCRIPTION.md Template
 
 ```markdown
-# TODO-XXXX: Название задачи
+# TODO-XXXX: Task Title
 
 ## SIGNED NOT_FOR_COMPACTION.
 
@@ -175,17 +175,17 @@ TODOs/
 
 ## Problematic
 
-Почему эта задача существует:
-- Проблема 1
-- Проблема 2
-- Проблема 3
+Why this task exists:
+- Problem 1
+- Problem 2
+- Problem 3
 
 ## Way to solve
 
-Как будем решать:
-- Подход
-- Архитектура
-- Ключевые решения
+How we will solve it:
+- Approach
+- Architecture
+- Key decisions
 
 ## Dependencies
 
@@ -221,9 +221,9 @@ SIGNED NOT_FOR_COMPACTION. 2026-05-20 05:06 kr/claude-sonnet-4-5
 
 ---
 
-## Git Workflow
+### 5. Git Workflow
 
-### Branch Strategy
+#### Branch Strategy
 
 ```
 main (master)
@@ -232,7 +232,7 @@ main (master)
   └─ bugfix/nonce-validation        (hotfix)
 ```
 
-### Commit Messages
+#### Commit Messages
 
 **Format:**
 ```
@@ -244,12 +244,12 @@ main (master)
 ```
 
 **Types:**
-- `feat`: Новая функциональность
-- `fix`: Исправление бага
-- `test`: Добавление тестов
-- `refactor`: Рефакторинг без изменения функциональности
-- `docs`: Документация
-- `chore`: Рутинные задачи (обновление зависимостей)
+- `feat`: New functionality
+- `fix`: Bug fix
+- `test`: Adding tests
+- `refactor`: Refactoring without functional change
+- `docs`: Documentation
+- `chore`: Routine tasks (dependency updates)
 
 **Example:**
 ```
@@ -265,18 +265,18 @@ Tests: test_create_branch(), test_branch_naming()
 Refs: TODO-0002 Phase 1 Step 1.3
 ```
 
-### Commit Frequency
+#### Commit Frequency
 
-- Коммить после каждого зелёного теста
-- Коммить после рефакторинга
-- Коммить в конце рабочего дня
-- **НЕ** коммитить сломанный код (кроме WIP веток)
+- Commit after every green test
+- Commit after refactoring
+- Commit at end of work day
+- **DO NOT** commit broken code (except on WIP branches)
 
 ---
 
-## Code Style
+### 6. Code Style
 
-### Python (PEP 8 + расширения)
+#### Python (PEP 8 + extensions)
 
 ```python
 # Imports: stdlib → third-party → local
@@ -290,48 +290,48 @@ from cryptography.hazmat.primitives import hashes
 from .core import Account, Transaction
 from .git_backend import GitBlockchain
 
-# Type hints везде
+# Type hints everywhere
 def create_branch(self, wallet: str, parent: str = "main") -> str:
     ...
 
-# Docstrings для публичных функций
+# Docstrings for public functions
 def validate_transaction(tx: Transaction, state: BranchState) -> bool:
     """Validate transaction against branch state.
-    
+
     Args:
         tx: Transaction to validate
         state: Current branch state
-        
+
     Returns:
         True if valid, False otherwise
     """
     ...
 
-# Константы в UPPER_CASE
+# Constants in UPPER_CASE
 VALIDATOR_COUNT = 7
 QUORUM_SIZE = 5
 GOSSIP_FANOUT = 3
 
-# Классы в PascalCase
+# Classes in PascalCase
 class BranchManager:
     ...
 
-# Функции и переменные в snake_case
+# Functions and variables in snake_case
 def get_branch_state(branch_name: str) -> BranchState:
     ...
 ```
 
-### Naming Conventions
+#### Naming Conventions
 
 ```python
-# ✅ GOOD: Понятные имена
+# ✅ GOOD: Clear names
 def detect_utxo_conflicts(branch: BranchState, main: BranchState) -> list[Conflict]:
     spent_in_branch = branch.spent_utxos
     spent_in_main = self._get_spent_utxos_since(main, branch.parent_hash)
     double_spends = spent_in_branch & spent_in_main
     ...
 
-# ❌ BAD: Непонятные сокращения
+# ❌ BAD: Cryptic abbreviations
 def det_utxo_conf(b: BS, m: BS) -> list[C]:
     sib = b.su
     sim = self._gsus(m, b.ph)
@@ -341,23 +341,23 @@ def det_utxo_conf(b: BS, m: BS) -> list[C]:
 
 ---
 
-## Testing Strategy
+### 7. Testing Strategy
 
-### Test Pyramid
+#### Test Pyramid
 
 ```
         ┌─────────┐
-        │   E2E   │  10% — полные сценарии
+        │   E2E   │  10% — full scenarios
         └─────────┘
       ┌─────────────┐
-      │ Integration │  20% — взаимодействие компонентов
+      │ Integration │  20% — component interaction
       └─────────────┘
     ┌─────────────────┐
-    │   Unit Tests    │  70% — отдельные функции/классы
+    │   Unit Tests    │  70% — individual functions/classes
     └─────────────────┘
 ```
 
-### Test Naming
+#### Test Naming
 
 ```python
 # Format: test_<what>_<condition>_<expected>
@@ -372,7 +372,7 @@ def test_consensus_insufficient_votes_aborts_merge():
     ...
 ```
 
-### Test Structure (AAA Pattern)
+#### Test Structure (AAA Pattern)
 
 ```python
 def test_prevote_with_conflicts_votes_no():
@@ -380,10 +380,10 @@ def test_prevote_with_conflicts_votes_no():
     validator = ValidatorNode(address="0xval1")
     proposal = MergeProposal(branch_name="branch/0xalice/001")
     conflicts = [Conflict(type=ConflictType.UTXO_DOUBLE_SPEND)]
-    
+
     # ACT
     vote = validator.prevote(proposal, conflicts)
-    
+
     # ASSERT
     assert vote.vote == Vote.NO
     assert "conflict" in vote.reason.lower()
@@ -391,35 +391,35 @@ def test_prevote_with_conflicts_votes_no():
 
 ---
 
-## Documentation
+### 8. Documentation
 
-### Code Comments
+#### Code Comments
 
-**Когда писать:**
-- Сложная логика (не очевидная из кода)
-- Workarounds и костыли (с объяснением почему)
-- Ссылки на внешние спецификации
-- TODO/FIXME/HACK метки
+**When to write:**
+- Complex logic (not obvious from the code)
+- Workarounds and hacks (with explanation why)
+- References to external specifications
+- TODO/FIXME/HACK markers
 
-**Когда НЕ писать:**
-- Очевидные вещи (`i += 1  # increment i`)
-- Дублирование имени функции
-- Устаревшие комментарии (удаляй!)
+**When NOT to write:**
+- Obvious things (`i += 1  # increment i`)
+- Repeating the function name
+- Stale comments (delete them!)
 
 ```python
-# ✅ GOOD: Объясняет "почему"
+# ✅ GOOD: Explains "why"
 # Use optimistic locking to avoid deadlocks between branches.
 # Conflicts are detected at merge time, not during execution.
 async with self._branch_locks[branch_name]:
     ...
 
-# ❌ BAD: Объясняет "что" (видно из кода)
+# ❌ BAD: Explains "what" (visible from code)
 # Lock the branch
 async with self._branch_locks[branch_name]:
     ...
 ```
 
-### README Structure
+#### README Structure
 
 ```markdown
 # Project Name
@@ -461,200 +461,201 @@ MIT
 
 ---
 
-## Error Handling
+### 9. Code-Level Error Handling
 
-### Принципы
+**Rule:** Be explicit about failures. Never swallow exceptions.
 
-1. **Fail fast**: Обнаруживай ошибки как можно раньше
-2. **Explicit is better than implicit**: Явные проверки лучше неявных
-3. **Don't catch what you can't handle**: Не глуши исключения
-4. **Log before raising**: Логируй контекст перед выбросом
+**Principles:**
+1. **Fail fast**: Detect errors as early as possible
+2. **Explicit is better than implicit**: Use explicit checks over silent assumptions
+3. **Don't catch what you can't handle**: Never silence exceptions without a reason
+4. **Log before raising**: Log context before throwing
 
-### Примеры
+**Examples:**
 
 ```python
-# ✅ GOOD: Явная проверка + информативное сообщение
+# ✅ GOOD: Explicit check + informative message
 def merge_branches(self, source: str, target: str) -> bool:
     if source not in self.branches:
         raise ValueError(f"Source branch '{source}' does not exist")
-    
+
     if target not in self.branches:
         raise ValueError(f"Target branch '{target}' does not exist")
-    
+
     conflicts = self.detect_conflicts(source, target)
     if conflicts:
         logger.error(f"Merge conflicts detected: {conflicts}")
         raise MergeConflictError(
             f"Cannot merge {source} into {target}: {len(conflicts)} conflicts"
         )
-    
+
     # ... merge logic
 
-# ❌ BAD: Молчаливый провал
+# ❌ BAD: Silent failure
 def merge_branches(self, source: str, target: str) -> bool:
     try:
         # ... merge logic
         return True
     except Exception:
-        return False  # Что пошло не так?!
+        return False  # What went wrong?!
 ```
 
 ---
 
-## Performance Guidelines
+### 10. Performance Guidelines
 
-### Преждевременная оптимизация — корень всех зол
+**Rule:** Make it work first, then make it fast. Premature optimization is the root of all evil.
 
-**Правило:** Сначала сделай работающим, потом быстрым.
+**Process:**
+1. Write simple code
+2. Write tests
+3. Measure performance
+4. Optimize bottlenecks
+5. Measure again
 
-**Процесс:**
-1. Напиши простой код
-2. Напиши тесты
-3. Измерь производительность
-4. Оптимизируй узкие места
-5. Измерь снова
+**When to optimize:**
+- Profiling identified a bottleneck
+- Users complain about speed
+- SLA is not being met
 
-### Когда оптимизировать
-
-- Профилирование показало узкое место
-- Пользователи жалуются на скорость
-- Не проходим SLA (Service Level Agreement)
-
-### Когда НЕ оптимизировать
-
-- "Мне кажется, это медленно"
-- "Этот код выглядит неэффективно"
-- "В теории можно быстрее"
+**When NOT to optimize:**
+- "It feels slow"
+- "This code looks inefficient"
+- "In theory it could be faster"
 
 ---
 
-## Security Principles
+### 11. Security Principles
 
-### Defense in Depth
+#### Defense in Depth
 
-Несколько уровней защиты:
+Multiple layers of protection:
 
-1. **Input Validation**: Проверяй все входные данные
-2. **Authentication**: Проверяй подписи транзакций
-3. **Authorization**: Проверяй права доступа
-4. **Encryption**: Шифруй чувствительные данные
-5. **Audit Logging**: Логируй все критичные операции
+1. **Input Validation**: Validate all input data
+2. **Authentication**: Verify transaction signatures
+3. **Authorization**: Check access rights
+4. **Encryption**: Encrypt sensitive data
+5. **Audit Logging**: Log all critical operations
 
-### Примеры
+#### Examples
 
 ```python
-# ✅ GOOD: Валидация + проверка подписи
+# ✅ GOOD: Validation + signature check
 def submit_transaction(self, tx: AsyncTransaction) -> bool:
     # 1. Validate structure
     if not tx.sender or not tx.recipient:
         raise ValueError("Invalid transaction: missing sender/recipient")
-    
+
     # 2. Verify signature
     if not self.crypto.verify(tx.sender, tx.serialize(), tx.signature):
         raise SecurityError("Invalid signature")
-    
+
     # 3. Check balance
     if self.get_balance(tx.sender) < tx.value:
         raise ValueError("Insufficient balance")
-    
+
     # 4. Log
     logger.info(f"Transaction submitted: {tx.tx_hash}")
-    
+
     return True
 ```
 
 ---
 
-## Collaboration Rules
+### 12. Collaboration Rules
 
-### Code Review
+#### Code Review
 
-**Что проверять:**
-- [ ] Тесты проходят
-- [ ] Код следует KISS
-- [ ] Нет дублирования (DRY)
-- [ ] Есть тесты для нового кода
-- [ ] Документация обновлена
-- [ ] Коммит-сообщения понятны
+**Checklist:**
+- [ ] Tests pass
+- [ ] Code follows KISS
+- [ ] No duplication (DRY)
+- [ ] Tests exist for new code
+- [ ] Documentation updated
+- [ ] Commit messages are clear
 
-**Как давать фидбек:**
-- Будь конструктивен
-- Предлагай решения, не только критикуй
-- Хвали хороший код
-- Задавай вопросы вместо утверждений
+**How to give feedback:**
+- Be constructive
+- Suggest solutions, not just criticism
+- Praise good code
+- Ask questions instead of making statements
 
-### Для агентов
+#### For Agents
 
-**Перед началом работы:**
-1. Прочитай TODO.md
-2. Прочитай PRINCIPLES.md (этот файл)
-3. Прочитай DESCRIPTION.md текущей задачи
-4. Прочитай DONE.md (база знаний)
+**Before starting work:**
+1. Read TODO.md
+2. Read PRINCIPLES.md (this file)
+3. Read DESCRIPTION.md of the current task
+4. Read DONE.md (knowledge base)
 
-**Во время работы:**
-1. Следуй TDD циклу
-2. Коммить часто
-3. Документируй проблемы
-4. Спрашивай, если неясно
+**During work:**
+1. Follow the TDD cycle
+2. Commit often
+3. Document problems
+4. Ask if unclear
 
-**После завершения:**
-1. Все тесты зелёные
-2. Код отрефакторен
-3. Документация обновлена
-4. Closure stamp в DONE.md
+**After completion:**
+1. All tests green
+2. Code refactored
+3. Documentation updated
+4. Closure stamp in DONE.md
 
 ---
 
-## Заповеди разработчика Gitchain
+### 13. Developer's Commandments
 
-1. **Не изобретай велосипеды** — используй существующий код
-2. **Не ищи обходные пути** — делай правильно с первого раза
-3. **Не сомневайся** — спроси, если неясно
-4. **Не усложняй** — простота побеждает
-5. **Не пропускай тесты** — TDD обязателен
-6. **Не забывай документировать** — TODO-DONE workflow священен
-7. **Не коммить сломанное** — только зелёные тесты
-8. **Не молчи об ошибках** — fail fast, log everything
-9. **Не оптимизируй рано** — сначала работающий код
-10. **Не работай в одиночку** — переиспользуй знания из DONE.md
+1. **Do not reinvent the wheel** — reuse existing code
+2. **Do not cut corners** — do it right the first time
+3. **Do not guess** — ask if unclear
+4. **Do not overcomplicate** — simplicity wins
+5. **Do not skip tests** — TDD is mandatory
+6. **Do not forget to document** — TODO-DONE workflow is sacred
+7. **Do not commit broken code** — only green tests
+8. **Do not stay silent about errors** — fail fast, log everything
+9. **Do not optimize prematurely** — working code first
+10. **Do not work alone** — reuse knowledge from DONE.md
 
-### 9. Error Handling Methodology
+---
 
-**Правило:** Каждая ошибка — возможность роста. Не игнорировать, не скрывать, не повторять.
+### 14. Error Handling Methodology (Agent-Level)
 
-**Классификация ошибок:**
+**Rule:** Every error is an opportunity to improve. Do not ignore, hide, or repeat.
 
-| Класс | Причина | Реакция |
-|-------|---------|---------|
-| **A** | Недостаточно информации | Запрос уточнения; предложить альтернативы |
-| **Б** | Технические ограничения | Оптимизировать; честно указать лимиты |
-| **В** | Неоднозначность запроса | Предложить все интерпретации; запросить выбор |
-| **Г** | Выход за границы компетенции | Признать; направить к эксперту |
+**Error classification:**
 
-**Приоритет точности:** Честность важнее полноты. При неопределённости — никаких спекуляций, указать границы, запросить уточнение.
+| Class | Cause | Response |
+|-------|-------|----------|
+| **A** | Insufficient information | Ask for clarification; offer alternatives |
+| **B** | Technical limitations | Optimize; honestly state limits |
+| **C** | Ambiguous request | Present all interpretations; ask for choice |
+| **D** | Beyond competence boundaries | Admit it; redirect to an expert |
 
-**Цикл улучшения:** `Идентификация → Анализ причин → Решение → Проверка → Внедрение → Мониторинг → Документирование`
+**Priority of accuracy:** Honesty over completeness. When uncertain — no speculation, state the boundaries, ask for clarification.
 
-**Критерий успеха:** Ошибка не повторяется в аналогичных условиях. Урок задокументирован. Рекомендации внедрены.
+**Improvement cycle:** `Identify → Root-cause analysis → Solution → Verify → Deploy → Monitor → Document`
 
-### 10. Cognitive Reconstructor
+**Success criteria:** Error does not recur under similar conditions. Lesson is documented. Recommendations are applied.
 
-**Правило:** Работай как когнитивный реконструктор, а не как генератор догадок.
+---
 
-**Применение:**
-- При недостатке данных не заполняй пустоты выдумкой.
-- Каждый вопрос должен уменьшать неопределённость.
-- При любой неоднозначности показывай 2–5 сильнейших версий, объясняй чем они различаются, указывай лучший следующий шаг проверки.
-- Строго отделяй подтверждённое от вероятного.
+### 15. Cognitive Reconstructor
+
+**Rule:** Work as a cognitive reconstructor, not as a guess generator.
+
+**Application:**
+- When data is insufficient, do not fill gaps with fabrication.
+- Every question must reduce uncertainty.
+- When in doubt, present 2–5 strongest hypotheses, explain how they differ, and suggest the best next check.
+- Strictly separate confirmed from probable.
 
 ---
 
 ## SIGNED NOT_FOR_COMPACTION.
 
-Эти принципы — фундамент Gitchain. Читай их как "Отче наш" перед каждой сессией разработки.
+These principles are the foundation of Gitchain. Read them like a scripture before every development session.
 
-**Для агентов:** Этот файл — ваша Библия. Следуйте ему неукоснительно. Передавайте знания следующим агентам через DONE.md.
+**For agents:** This file is your Bible. Follow it strictly. Pass knowledge to subsequent agents through DONE.md.
 
-**Дата создания:** 2026-05-20  
-**Версия:** 2.0  
-**Автор:** kr/claude-sonnet-4-5 + claude-opus-4-7
+**Created:** 2026-05-20  
+**Version:** 2.0  
+**Author:** kr/claude-sonnet-4-5 + claude-opus-4-7
