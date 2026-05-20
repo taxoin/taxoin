@@ -64,6 +64,7 @@
 | **0004F** | Technical Wishlist — constitution, sharding, mobile, formal verif | 🔵 | 📝 Spec |
 | **0004G** | 🆕 **Path to Public** — Docker, REST API, Telegram Wallet, QR | 🔴 **P0** | 🚀 **Start here** |
 | **0004H** | **Throughput** — batch commits, LevelDB, async git | 🟡 **P1** | 📝 Spec |
+| **0004I** | **Repo Strategy** — code vs blockchain, dual-repo backup | 🟡 **P1** | 📝 Spec |
 
 ### 🚀 TODO-0004G: Path to Public (первая задача к реализации)
 
