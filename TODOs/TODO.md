@@ -84,3 +84,24 @@
 
 **Implementation Plan:** 5 phases, 60-80 tests, TDD approach
 
+---
+
+### TODO-0004: Research & Improvements
+
+**Status:** 🔬 RESEARCH PHASE  
+**Goal:** Улучшение Taxoin на основе анализа конкурентов, криптографии и UX
+
+**Sub-tasks:**
+
+- **0004A: Rating Formula** — Bayesian average, time decay, anti-manipulation
+  → `TODOs/TODO-0004/TODO-0004A_RATING.md`
+  
+- **0004B: Dispute Resolution** — arbitrator, 5/7 verdict, timeout, evidence
+  → `TODOs/TODO-0004/TODO-0004B_DISPUTES.md`
+  
+- **0004C: UX — Mutual Attestation** — seamless signing, relay, QR
+  → `TODOs/TODO-0004/TODO-0004C_UX.md`
+  
+- **0004D: ZK-Reputation** — private reputation layer (Noir, UniRep)
+  → `TODOs/TODO-0004/TODO-0004D_ZK.md`
+
