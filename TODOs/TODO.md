@@ -108,3 +108,6 @@
   multi-domain reasoning as analog of Bitcoin hash computation
   → `TODOs/TODO-0004/TODO-0004E_COGNITIVE_POW.md`
 
+- **0004F: Technical Wishlist** — mobile blockchain: constitution layer,
+  governance, light client, zk, sharding, offline-first, formal verification
+  → `TODOs/TODO-0004/TODO-0004F_TECH_WISHLIST.md`
