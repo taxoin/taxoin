@@ -648,6 +648,39 @@ def submit_transaction(self, tx: AsyncTransaction) -> bool:
 - When in doubt, present 2–5 strongest hypotheses, explain how they differ, and suggest the best next check.
 - Strictly separate confirmed from probable.
 
+### 16. Cognitive Proof-of-Work
+
+**Rule:** Demand real reasoning, not cached answers. Every agent task
+must be hard enough that shallow pattern-matching fails.
+
+**A good prompt forces the model to:**
+- Hold multiple incompatible constraints simultaneously
+- Attack its own architecture (find 10 exploits, mitigate each)
+- Self-critique ("why might this not work? what are hidden assumptions?")
+- Generate novel formal systems ("invent a new consensus without PoW/PoS/PBFT")
+- Prove internal consistency ("prove that collusion is not profitable")
+- Synthesize across domains (economics + crypto + law + sociology + UX)
+- Make explicit trade-offs ("what did you sacrifice and why?")
+
+**Formula for a Cognitive PoW prompt:**
+```
+1. Impossible-seeming goal
+2. Many conflicting constraints (7+)
+3. "Break your own design" requirement
+4. Forced trade-offs (nothing is free)
+5. Mathematical invariants to prove
+6. Multi-domain synthesis
+7. Ban on known solutions
+```
+
+**Why:** Without Cognitive PoW, the agent produces plausible-sounding
+but shallow answers. With it, the agent must *actually think* —
+building new structures, searching constraint space, verifying
+consistency. This is the closest analogue to Bitcoin's hash
+computation in the domain of AI reasoning.
+
+**Reference:** `TODOs/TODO-0004/TODO-0004E_COGNITIVE_POW.md`
+
 ---
 
 ## SIGNED NOT_FOR_COMPACTION.

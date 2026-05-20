@@ -104,4 +104,7 @@
   
 - **0004D: ZK-Reputation** — private reputation layer (Noir, UniRep)
   → `TODOs/TODO-0004/TODO-0004D_ZK.md`
+- **0004E: Cognitive PoW** — AI-hard prompts, constrained synthesis,
+  multi-domain reasoning as analog of Bitcoin hash computation
+  → `TODOs/TODO-0004/TODO-0004E_COGNITIVE_POW.md`
 
