@@ -20,6 +20,7 @@ from .crypto_utils import (
     sign,
     verify,
 )
+from .gossip_protocol import GossipMessageType, GossipProtocol
 
 
 class ValidatorStatus(Enum):
@@ -198,6 +199,7 @@ class ValidatorNetwork:
     ):
         self.validator_set = validator_set
         self._private_keys: dict[str, str] = private_keys or {}
+        self._gossip: GossipProtocol | None = None
 
     def broadcast(self, proposal: MergeProposal) -> list[str]:
         """Broadcast a proposal to all active validators.
@@ -280,3 +282,34 @@ class ValidatorNetwork:
             proposal.signature = ValidatorNode.sign_data(proposal_data, priv_key_pem)
 
         return proposal
+
+    def gossip_broadcast(
+        self,
+        msg_type: GossipMessageType,
+        payload: str,
+        sender: str,
+    ) -> set[str]:
+        """Broadcast a message using the gossip protocol.
+
+        Uses GossipProtocol for epidemic propagation.
+        Initializes gossip lazily if not already created.
+
+        Args:
+            msg_type: Type of gossip message
+            payload: Message content
+            sender: Sender validator address
+
+        Returns:
+            Set of all validator addresses reached
+        """
+        if self._gossip is None:
+            self._gossip = GossipProtocol(
+                validator_set=self.validator_set,
+                fanout=3,
+            )
+
+        return self._gossip.broadcast(
+            msg_type=msg_type,
+            payload=payload,
+            sender=sender,
+        )
