@@ -15,6 +15,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .attested_tx import AttestedTransaction, BalanceHold
@@ -27,6 +28,7 @@ from .service_registry import ServiceRegistration, ServiceRegistry
 
 app = FastAPI(title="Taxoin API", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.mount("/web", StaticFiles(directory="web", html=True), name="web")
 
 # ── Internal state (singletons, persisted) ──────────────────────────────
 
@@ -218,6 +220,24 @@ def get_validators():
         return manager.list_branches()
     except Exception:
         return ["main"]
+
+
+
+@app.post("/api/testnet/faucet")
+def faucet(data: dict):
+    """Get 100 free Ⓣ for testing (testnet only)."""
+    from .core import Account
+    address = data.get("address", "")
+    if not address:
+        raise HTTPException(400, "Missing address")
+    manager = _get_manager()
+    main = manager.get_main_state()
+    acct = main.accounts.get(address)
+    if acct:
+        acct.balance += 100.0
+    else:
+        main.accounts[address] = Account(address=address, balance=100.0)
+    return {"status": "ok", "address": address, "amount": 100.0}
 
 
 # ── CLI runner ──────────────────────────────────────────────────────────
